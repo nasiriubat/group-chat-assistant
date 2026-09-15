@@ -15,6 +15,9 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    # Without it a host reboot brings the app and gateway back but not their
+    # database, and the app restarts forever looking for it.
+    restart: unless-stopped
 
   app:
     build: ./app
