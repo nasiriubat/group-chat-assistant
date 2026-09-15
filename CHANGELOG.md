@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.2.0 — 15 September 2026
+
+**Slack.** A fifth channel, over Socket Mode, so nothing has to be reachable
+from the internet. Create the app from the manifest in `docs/SETUP.md`, paste
+the two tokens on the Channels page (swapped tokens are refused), `/invite`
+the bot. Answers go into the question's thread with a link to the source
+message; the bot's Messages tab takes private questions, answered only from
+channels the asker is currently a member of. New dependency: `@slack/bolt`
+5.1.0, the official SDK, for the Socket Mode connection and Web API calls.
+Not yet run against a real workspace: see `docs/UNTESTED.md`.
+
+**The panel no longer goes down when another Postgres is running.** The
+database published `127.0.0.1:5432` for local tests. When another project held
+that port, Docker brought the db up with no network after a restart, the app
+could not resolve `db`, and it restarted forever. The db publishes no port
+now; `docker-compose.dev.yml` publishes it on 5433 for tests.
+
 ## v1.1.0 — 5 September 2026
 
 The tech-lead audit release. `docs/AUDIT.md` has every finding and what was
