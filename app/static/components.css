@@ -94,6 +94,9 @@ input.filled { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(14, 98, 69, 0
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
 .filters label { margin: 0; min-width: 160px; }
 .pager { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+/* A status and the one action that changes it, side by side in a table cell. */
+.row-action { display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.row-action form { margin: 0; }
 
 /* ---------- toasts ---------- */
 

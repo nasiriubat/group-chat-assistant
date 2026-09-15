@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set s = group.settings %}
 {% block title %}{{ group.name or group.external_id }}{% endblock %}
-{% block subtitle %}<p class="sub">{{ group.channel }} · <code>{{ group.external_id }}</code></p>{% endblock %}
+{% block subtitle %}<p class="sub">{{ group.channel }} · <code>{{ group.external_id }}</code>{% if not group.enabled %} · <span class="pill">paused</span>{% endif %}</p>{% endblock %}
 {% block body %}
 {% if error %}<div class="notice bad" role="alert">{{ error }} Nothing was saved; the form is as you left it.</div>{% endif %}
 <form method="post" action="/admin/groups/{{ group.id }}">
@@ -18,8 +18,10 @@
         </select>
       </label>
     </div>
-    <label><input type="checkbox" name="enabled" value="true" {% if group.enabled %}checked{% endif %}>
-      Active <small>messages are logged and questions answered</small></label>
+    <label><input type="checkbox" name="enabled" value="true" {% if group.enabled %}checked{% endif %}
+                  data-confirm-off="Pause this group? New messages stop being logged and questions go unanswered. History, decisions and retention stay as they are.">
+      Active <small>messages are logged and questions answered. Untick to pause: history, decisions and retention
+        stay, and what is said while paused is not kept.</small></label>
   </div>
 
   <div class="card">

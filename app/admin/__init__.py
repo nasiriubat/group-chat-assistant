@@ -155,6 +155,7 @@ from admin import (  # noqa: E402
     pages_cost,
     pages_data,
     pages_documents,
+    pages_group_status,
     pages_groups,
     pages_providers,
     pages_questions,
@@ -166,6 +167,7 @@ setup_forms.include_router(setup.actions)
 for module in (
     pages_providers,
     pages_groups,
+    pages_group_status,
     pages_questions,
     pages_cost,
     pages_data,

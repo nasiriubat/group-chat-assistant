@@ -5,7 +5,8 @@
     <div class="grid">
       <label>Group
         <select name="group_id" required>
-          {% for g in groups if g.enabled %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}
+          {# A paused group still has its history; asking it from here is how you check what it knows. #}
+          {% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}{% if not g.enabled %} (paused){% endif %}</option>{% endfor %}
         </select>
       </label>
       <label style="grid-column: span 2">Question

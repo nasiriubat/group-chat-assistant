@@ -421,6 +421,22 @@ Each group's page has four sections.
 **Basics.** Display name, which provider answers, and whether the group is
 active at all.
 
+**Pause a group** without deleting it: **Pause** on its row in the groups list,
+or untick **Active** on its page. From that moment:
+
+- New messages are not stored and questions in the group get no answer. The
+  gateway stops passing its messages on within 30 seconds; the app already
+  refuses them before that. What is said while paused is gone for good.
+- Its history, decisions and uploaded files stay. So does its retention
+  window, which keeps deleting old messages on schedule: a pause is not a way
+  to keep data longer than you promised.
+- Private questions are not answered from it.
+- You can still ask it from the **Ask it from here** box on the Questions page,
+  where it is marked *(paused)*.
+
+**Resume** starts logging again from that moment. The audit log records each
+pause and resume.
+
 **Answering.** Trigger words. The confidence threshold, which defaults to 0 so
 every question reaches the model and the model decides whether it can answer;
 raising it saves provider calls but the eval found it refuses real questions.

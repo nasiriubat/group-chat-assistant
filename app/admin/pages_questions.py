@@ -96,7 +96,7 @@ def ask(request: Request, group_id: int = Form(), question: str = Form()):
     provider call; the answer is logged like any other question."""
     group = groups.get_by_id(group_id)
     if group is None:
-        raise HTTPException(404)
+        raise HTTPException(404, "that group no longer exists; reload the page")
     question = question.strip()
     if not question:
         return admin.error_response(request, 422, "type a question first")

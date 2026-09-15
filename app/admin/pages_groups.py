@@ -9,6 +9,7 @@ import db
 import gateway_state
 import groups
 import providers
+from admin import pages_group_status
 
 pages = APIRouter()
 actions = APIRouter()
@@ -222,10 +223,10 @@ def save(
         if e.status_code != 422:
             raise
         return _edit_page(request, as_typed(), _plain(e.detail), 422)
-    note = "Saved."
+    note = pages_group_status.record(group, row) or "Saved."
     if purged:
         erased = ", ".join(f"{sender} ({c['messages']} messages)" for sender, c in purged)
-        note = f"Saved. Erased everything written by {erased}."
+        note = f"{note} Erased everything written by {erased}."
     return admin.redirect(f"/admin/groups/{group_id}", note)
 
 
