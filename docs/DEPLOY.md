@@ -92,7 +92,7 @@ assistant back after a reboot.
 sudo mkdir -p /srv/wtsap-rag && sudo chown "$USER" /srv/wtsap-rag
 git clone https://github.com/nasiriubat/wtsapp-rag.git /srv/wtsap-rag
 cd /srv/wtsap-rag
-git checkout v1.2.1
+git checkout "$(git tag --sort=-v:refname | head -1)"   # the newest release
 mkdir -p gateway/auth_state gateway/data
 sudo chown -R 1000:1000 gateway/auth_state gateway/data
 ```
