@@ -56,7 +56,8 @@ quote of the message it came from, or says it does not know.
 
 Status: v1.1. Admin panel and setup wizard at `http://localhost:8000/admin`.
 Measured numbers in [docs/EVAL.md](docs/EVAL.md), the runbook in
-[docs/OPERATIONS.md](docs/OPERATIONS.md), the threat model and its gaps in
+[docs/OPERATIONS.md](docs/OPERATIONS.md), running it on a CSC cPouta or Google
+Cloud VM in [docs/DEPLOY.md](docs/DEPLOY.md), the threat model and its gaps in
 [SECURITY.md](SECURITY.md), the audit that shaped v1.1 in
 [docs/AUDIT.md](docs/AUDIT.md), what is deliberately not built in `BACKLOG.md`.
 

@@ -83,7 +83,8 @@ Open **http://localhost:8000/setup**. There is no user name; type
 and you land on the page you asked for once you are in.
 
 Everything is bound to localhost. To reach the panel from another machine,
-put a reverse proxy with TLS in front of it rather than publishing the port.
+put a reverse proxy with TLS in front of it rather than publishing the port;
+[DEPLOY.md](DEPLOY.md) does this on a cloud VM, or skips it with an SSH tunnel.
 Two things to know when you do. The login lockout counts against the address
 your proxy reports in `X-Forwarded-For`, and only the addresses in
 `TRUSTED_PROXY` in `.env` may set that header; the default covers a proxy on

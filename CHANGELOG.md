@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.1 — 15 September 2026
+
+**Ready for a server.** `docs/DEPLOY.md` takes a CSC cPouta instance or a
+Google Cloud VM from nothing to running, moves an existing install with its
+data and pairing, reaches the panel over an SSH tunnel so no port but SSH is
+open, and adds a public HTTPS address with Caddy only if wanted. The database
+now restarts with the host like the other two services; before, a reboot
+brought back an app that could not find it.
+
 ## v1.2.0 — 15 September 2026
 
 **Slack.** A fifth channel, over Socket Mode, so nothing has to be reachable
