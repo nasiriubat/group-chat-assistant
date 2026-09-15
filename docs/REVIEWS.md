@@ -3,6 +3,68 @@
 One entry per phase: what the code review and security review found, and
 what was done about it. Findings that were not fixed say why.
 
+## v1.2.0 — code and security review of the Slack channel, 15 Sept 2026
+
+Two reviews of the Slack change before release, each tracing behaviour in the
+installed `@slack/bolt` and `@slack/socket-mode` source rather than their docs.
+No high-severity security finding. Everything below is fixed and tested unless
+it says otherwise.
+
+Code review:
+
+- **A Slack connection that never came up froze the whole gateway.**
+  `start()` awaited the Socket Mode connection, and that client retries some
+  failures forever (web-api's default alone is half an hour). The supervisor's
+  sync never returned, so WhatsApp and the other channels stopped being
+  supervised and the heartbeat went stale. The connection now starts without
+  being awaited, as Telegram's does, and every Slack client retries twice.
+- **A client that gave up was never restarted.** Its reconnect rejects without
+  emitting anything, so `dead()` stayed false. A watchdog reports the channel
+  dead after two minutes without a connection, and the supervisor starts it
+  again.
+- **A late report after stop undid the supervisor's blank report**, leaving a
+  disabled Slack's channels in the group picker. Nothing reports once stopping.
+- **Listing paged the whole workspace, and every message from an unlisted
+  channel started another scan**, racing each other and risking a rate limit
+  that pauses every answer queued behind it. Listing uses
+  `users.conversations`, runs one at a time and at most once a minute, and
+  remembers channels a listing does not return.
+- **Slack's markup was stored raw**, so "R&D" came back as "R&amp;amp;D".
+  Entities, mentions, channel links and URLs are decoded before ingest.
+- **A failed name lookup was cached for good.** Only Slack refusing is
+  remembered; the cache clears on every listing.
+- **CI never imported the Slack module inside the production image.** It does.
+- Found by a fake-token smoke test before the reviews: Bolt's own token check
+  runs unawaited in its constructor, so a bad token surfaced as an unhandled
+  rejection. The gateway checks the token itself and hands Bolt the ids.
+- `slack.js` passed 300 lines after the fixes; the pure functions moved to
+  `slack_format.js`, which the tests import without loading Bolt.
+
+Security review:
+
+- **The bot token could be sent to any host an event named.** Downloads go
+  only to `files.slack.com` or `files.slack-gov.com` over HTTPS, never follow a
+  redirect, skip external files, check the response's size before reading it,
+  and time out after 60 seconds.
+- **Someone removed from a Slack channel could keep asking about it
+  privately**, because Slack fell back to "has written there" like Telegram.
+  The gateway reports each channel's members from `conversations.members`,
+  refreshed when anyone joins or leaves, and the app treats Slack like
+  WhatsApp: no reported list, no private answer.
+- Found while building, before the reviews: **the two Slack tokens were not in
+  the redaction list**, so the Channels page would have shown them. Covered by
+  a test.
+- Answers set `link_names: false` on top of escaping, so plain `@here` never
+  pings either.
+
+Recorded, not changed:
+
+- Telegram and Discord downloads still have no timeout and trust the size the
+  platform declares. They only fetch from their platform's own hosts, and the
+  risk is a stalled download, not a leak. Left for a change of its own.
+- Nothing was run against a real Slack workspace. `docs/UNTESTED.md` lists
+  what that first run has to confirm.
+
 ## v1.0 release — security review of the whole tree, 5 Sept 2026
 
 A review of every route, every channel, every template and every SQL

@@ -17,6 +17,14 @@ KINDS = {
         "pairs": False,
         "dm_only": True,
     },
+    "slack": {
+        "fields": ("bot_token", "app_token"),
+        "pairs": False,
+        "dm_only": False,
+        # Pasting one Slack token into the other's box is the easy mistake, and
+        # the gateway could only report it as a connection that never comes up.
+        "prefixes": {"bot_token": "xoxb-", "app_token": "xapp-"},
+    },
 }
 _SELECT = "kind, enabled, updated_at, config IS NOT NULL AS configured, pgp_sym_decrypt(config, %s) AS config"
 
@@ -54,6 +62,9 @@ def upsert(kind, config=None, enabled=True):
     merged = {**(current["config"] if current else {}), **(config or {})}
     if gaps := missing(kind, merged):
         raise ValueError(f"{kind} needs {', '.join(gaps)}")
+    for field, prefix in KINDS[kind].get("prefixes", {}).items():
+        if not merged[field].startswith(prefix):
+            raise ValueError(f"the {kind} {field} starts with {prefix}; check the two are not swapped")
     with db.connect() as conn:
         conn.execute(
             """

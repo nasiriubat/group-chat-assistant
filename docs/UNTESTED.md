@@ -54,6 +54,21 @@ accessibility check.
   are unit-tested against the documented update shapes; grammY and
   discord.js were never run against the real APIs here. No tokens in `.env`.
 
+## Needs a Slack workspace
+
+- The Slack channel end to end: the manifest in SETUP.md creating a working
+  app, Socket Mode connecting with the two tokens, channels appearing after
+  `/invite`, a real mention triggering, the threaded answer with its
+  **Source message** permalink, private questions in the app's Messages tab,
+  a shared file downloading with `files:read` (and whether Slack ever
+  redirects that download, which the gateway refuses), member lists arriving
+  from `conversations.members`, reconnecting after a dropped socket, and the
+  two-minute watchdog restarting a client that gave up. The payload mapping,
+  markup decoding, triggers, subtype filter, file host check and escaping are
+  unit-tested against Slack's documented event shapes, and a bad token was
+  seen to fail `start()` cleanly against the real API; Bolt was never
+  connected to a real workspace here.
+
 ## Verified live (3 Sept 2026)
 
 - Anthropic `claude-opus-5`, Gemini `gemini-3.8-flash`, OpenAI `gpt-5.4-mini`

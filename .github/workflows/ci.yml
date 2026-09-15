@@ -65,7 +65,7 @@ jobs:
       - run: docker build -t app-image app
       - run: docker build -t gateway-image gateway
       # A build proves the Dockerfile parses; only a run proves the image starts.
-      - run: docker run --rm gateway-image node --input-type=module -e "await import('./core.js'); await import('./channels/whatsapp.js'); await import('./channels/telegram.js'); await import('./channels/discord.js')"
+      - run: docker run --rm gateway-image node --input-type=module -e "await import('./core.js'); await import('./channels/whatsapp.js'); await import('./channels/telegram.js'); await import('./channels/discord.js'); await import('./channels/slack.js')"
       - run: docker run --rm app-image python -c "import chunking, retrieval, main"
       # Both images run without root.
       - run: test "$(docker run --rm app-image id -u)" != 0 && test "$(docker run --rm gateway-image id -u)" != 0

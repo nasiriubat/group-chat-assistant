@@ -142,7 +142,7 @@ accurately as a much larger one, for a twentieth of the cost. Start small.
 
 ## 4 Connect a channel
 
-Go to **Channels**. Each one is independent; you can run all four.
+Go to **Channels**. Each one is independent; you can run all five.
 
 ### WhatsApp, by pairing a phone
 
@@ -180,6 +180,108 @@ The pairing survives restarts. It lives in `gateway/auth_state/`.
    bot to your server.
 5. Paste the token on the Channels page and enable it. Text channels appear as
    soon as it connects.
+
+### Slack
+
+Slack connects over **Socket Mode**: the gateway opens the connection to
+Slack, so nothing needs to be reachable from the internet and no port has to
+be opened. You need to be allowed to install apps in the workspace; on some
+workspaces an admin has to approve the install.
+
+**Create the Slack app**
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and press
+   **Create New App → From a manifest**. Pick your workspace.
+2. Choose **YAML**, replace everything in the box with the manifest below,
+   press **Next**, then **Create**. Change `name` and `display_name` if you
+   like: the display name is what people type after `@`.
+
+   ```yaml
+   display_information:
+     name: Group Assistant
+   features:
+     bot_user:
+       display_name: assistant
+       always_online: true
+     app_home:
+       messages_tab_enabled: true
+       messages_tab_read_only_enabled: false
+   oauth_config:
+     scopes:
+       bot:
+         - channels:history
+         - channels:read
+         - groups:history
+         - groups:read
+         - im:history
+         - chat:write
+         - users:read
+         - files:read
+   settings:
+     event_subscriptions:
+       bot_events:
+         - message.channels
+         - message.groups
+         - message.im
+         - member_joined_channel
+         - member_left_channel
+     socket_mode_enabled: true
+     org_deploy_enabled: false
+     token_rotation_enabled: false
+   ```
+
+   What the scopes are for: `*:history` lets it read public channels, private
+   channels and its own direct messages; `*:read` lets it list the channels it
+   was invited to; `chat:write` lets it answer; `users:read` puts names next to
+   messages instead of ids; `files:read` lets it download files shared in a
+   channel, which it only does for groups with **Index files shared in the
+   chat** turned on.
+3. Open **Basic Information → App-Level Tokens → Generate Token and Scopes**.
+   Name it `socket`, press **Add Scope**, choose `connections:write`, press
+   **Generate**, and copy the token. It starts with `xapp-`.
+4. Open **Install App → Install to Workspace → Allow**. Copy the
+   **Bot User OAuth Token**. It starts with `xoxb-`.
+
+**Connect it in the panel**
+
+5. Open **Channels** and find the **Slack** card. Paste the `xoxb-` token into
+   **Bot User OAuth Token** and the `xapp-` token into **App-level token**.
+   Leave **Enabled** ticked and press **Save**. If the two are swapped the
+   panel refuses them and says so.
+6. Within 30 seconds the card turns green: *connected as @assistant in
+   Your Workspace*. If it says *enabled, not connected*, see the
+   troubleshooting table at the end of this guide.
+
+**Choose the channels it listens to**
+
+7. In Slack, open each channel it should remember and send
+   `/invite @assistant`. Private channels work the same way. It hears nothing
+   in a channel it has not been invited to.
+8. In the panel open **Setup**, step **Groups**. The channel is listed as
+   *Your Workspace / #channel* a few seconds after the invite. Tick it and press
+   **Enable selected**. Logging starts from that moment; messages written
+   before are not fetched.
+
+**Ask it**
+
+9. In an enabled channel write `@assistant what did we decide about the
+   venue?`, or start the message with the group's trigger word (`@agent` by
+   default). The answer arrives in a thread under the question, with a
+   **Source message** link to the message it came from. Slack has no
+   quote-reply, so the link is the citation. A follow-up in that thread needs
+   the mention or the trigger word again.
+10. For a private question, open the app under **Apps** in Slack's sidebar and
+    write in its **Messages** tab. It answers from the channels you are a
+    member of whose group has **Allow private questions** turned on. Leave a
+    channel and it stops answering about it within a minute.
+
+Group DMs (a direct message with several people) are ignored, and so are
+edits and deletions: an edited message keeps the text it was sent with.
+
+To stop it, untick **Enabled** on the Slack card, or press **Remove** to delete
+both tokens. To revoke it on Slack's side as well, open the app at
+[api.slack.com/apps](https://api.slack.com/apps) and delete it or reinstall it,
+which issues a new bot token.
 
 ### WhatsApp Cloud API, Meta's official one
 
@@ -409,6 +511,10 @@ channel is not connected. The panel refreshes Health every 30 seconds.
 | The QR never appears | `docker compose logs gateway`. The gateway needs the app to be up first; it retries every five seconds. |
 | Telegram bot sees nothing | `/setprivacy` → Disable in BotFather, then remove and re-add the bot to the group. |
 | Discord messages arrive empty | MESSAGE CONTENT INTENT is off in the developer portal. |
+| Slack card says "enabled, not connected" | `docker compose logs gateway \| grep -i slack`: a "slack connection failed" or "channel failed to start" line carries Slack's error. The gateway tries again every 30 seconds. `invalid_auth` means a token was revoked or mistyped; `not_allowed_token_type` means the app-level token lacks `connections:write`. Check **Socket Mode** is switched on in the app's settings too. |
+| Slack channel never appears in the groups list | The bot has not been invited: `/invite @assistant` in that channel. |
+| Slack bot connected but never answers | Is the channel enabled on the Groups page? Did the message mention the bot or start with the trigger word? A reply in a thread without either is not a question. |
+| Slack shared files show "a web page" in the gateway log | The `files:read` scope is missing. Add it under **OAuth & Permissions** and reinstall the app. |
 | Meta rejects the webhook | It must be HTTPS and publicly reachable, and the verify token must match exactly. |
 | Answers are slow | Health page shows the median. The local reranker is the bottleneck when several questions arrive at once; see [EVAL.md](EVAL.md). |
 | Something else | [OPERATIONS.md](OPERATIONS.md) has the runbook: logs, backups, restore, rotating secrets. |

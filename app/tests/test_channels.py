@@ -14,7 +14,23 @@ def clean():
     channels.delete("telegram")
     channels.delete("discord")
     channels.delete("whatsapp_cloud")
+    channels.delete("slack")
     channels.upsert("whatsapp", None, True)
+
+
+def test_slack_needs_both_tokens_and_refuses_them_swapped(browser, clean):
+    import channels
+
+    assert "api.slack.com/apps" in browser.get("/admin/channels").text
+    with pytest.raises(ValueError, match="app_token"):
+        channels.upsert("slack", {"bot_token": "xoxb-1"})
+    with pytest.raises(ValueError, match="swapped"):
+        channels.upsert("slack", {"bot_token": "xapp-1", "app_token": "xoxb-1"})
+    res = post(browser, "/admin/channels/slack", bot_token="xoxb-1", app_token="xapp-1", enabled="true")
+    assert res.status_code == 303
+    assert channels.get("slack")["config"] == {"bot_token": "xoxb-1", "app_token": "xapp-1"}
+    masked = next(c for c in channels.list_all() if c["kind"] == "slack")["config"]
+    assert masked == {"bot_token": "***", "app_token": "***"}
 
 
 def test_a_multi_field_channel_needs_all_of_them_and_merges_updates(client, clean):

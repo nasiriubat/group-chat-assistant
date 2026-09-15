@@ -150,6 +150,8 @@ def dm_candidates(sender_jid, reported_members):
     and the sender is a member. Where the channel can list members that list
     decides, so someone who has left cannot keep asking. Where it cannot
     (Telegram, Discord), having written there is the evidence we have."""
+    # Channels that report members. Until they have, nobody is a member.
+    lists_members = ("whatsapp", "slack")
     with db.connect() as conn:
         wrote = {
             r["group_id"]
@@ -162,9 +164,9 @@ def dm_candidates(sender_jid, reported_members):
         listed = reported_members.get(g["external_id"])
         if listed is not None:
             return sender_jid in listed
-        # WhatsApp can list members. No list yet means the gateway has not
-        # reported this group, and until it does nobody is a member of it.
-        if g["channel"] == "whatsapp":
+        # No list yet means the gateway has not reported this group. Falling
+        # back to "wrote there" would let someone removed from it keep asking.
+        if g["channel"] in lists_members:
             return False
         return g["external_id"] in wrote
 

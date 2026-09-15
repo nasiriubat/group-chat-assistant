@@ -5,6 +5,7 @@ import pino from "pino";
 import { createCore } from "./core.js";
 import { createSupervisor } from "./supervisor.js";
 import * as discord from "./channels/discord.js";
+import * as slack from "./channels/slack.js";
 import * as telegram from "./channels/telegram.js";
 import * as whatsapp from "./channels/whatsapp.js";
 import * as whatsappCloud from "./channels/whatsapp_cloud.js";
@@ -30,7 +31,7 @@ process.on("uncaughtException", (err) => {
 const core = createCore({ appUrl: APP_URL, token: TOKEN, log });
 const supervisor = createSupervisor({
   core,
-  modules: { whatsapp, telegram, discord, whatsapp_cloud: whatsappCloud },
+  modules: { whatsapp, telegram, discord, slack, whatsapp_cloud: whatsappCloud },
   log,
 });
 

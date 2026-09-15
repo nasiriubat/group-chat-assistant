@@ -31,8 +31,9 @@ quote of the message it came from, or says it does not know.
   cited by file name and page. Pictures and scanned pages are read by the model
   you configured, so there is no OCR engine to install. Files shared in a chat
   can be indexed too, per group, off by default.
-- Channels: WhatsApp (paired phone), Telegram (bot token) and Discord (bot
-  token), all through one gateway, mixed freely across groups. Set them up
+- Channels: WhatsApp (paired phone), Telegram (bot token), Discord (bot
+  token) and Slack (two tokens, Socket Mode, no public URL), all through one
+  gateway, mixed freely across groups. Set them up
   on the Channels page; the gateway picks changes up within 30 seconds. The
   WhatsApp Cloud API is there too, for private questions on a business
   number, which is all Meta permits it to do.

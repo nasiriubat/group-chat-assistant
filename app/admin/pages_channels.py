@@ -13,11 +13,13 @@ TITLES = {
     "whatsapp": "WhatsApp",
     "telegram": "Telegram",
     "discord": "Discord",
+    "slack": "Slack",
     "whatsapp_cloud": "WhatsApp Cloud API",
 }
 SETUP_URL = {
     "telegram": "https://t.me/BotFather",
     "discord": "https://discord.com/developers/applications",
+    "slack": "https://api.slack.com/apps",
     "whatsapp_cloud": "https://developers.facebook.com/apps",
 }
 HELP = {
@@ -27,6 +29,9 @@ HELP = {
     "discord": "Create an application at discord.com/developers, add a Bot, enable the Message Content "
     "intent, and invite it with the bot scope and Read Messages, Send Messages, Read Message History "
     "permissions. Channels appear here as soon as it connects.",
+    "slack": "Create an app at api.slack.com/apps from the manifest in docs/SETUP.md. It uses Socket Mode, "
+    "so no public URL is needed. Paste the Bot User OAuth Token (xoxb-) and an app-level token with "
+    "connections:write (xapp-), then /invite the bot to each channel. A channel appears here once invited.",
     "whatsapp_cloud": "Meta's official API, for private questions on a business number. It answers people "
     "who are in one of your groups, inside WhatsApp's 24-hour window. It cannot watch group chats: Meta "
     "caps those at 8 participants and requires an Official Business Account. Needs a public HTTPS webhook "
@@ -37,6 +42,8 @@ LABELS = {
     "phone_number_id": "Phone number id",
     "verify_token": "Webhook verify token (you choose it)",
     "app_secret": "App secret",
+    "bot_token": "Bot User OAuth Token (xoxb-…)",
+    "app_token": "App-level token (xapp-…)",
 }
 
 

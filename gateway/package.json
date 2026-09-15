@@ -10,6 +10,7 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@slack/bolt": "5.1.0",
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "discord.js": "14.27.0",
     "grammy": "1.46.0",

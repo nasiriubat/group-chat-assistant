@@ -110,6 +110,18 @@ def test_a_whatsapp_group_nobody_has_reported_yet_has_no_members(env, monkeypatc
     assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
 
 
+def test_a_slack_channel_nobody_has_reported_yet_has_no_members(env, monkeypatch):
+    import db
+    import providers
+
+    # Slack lists members like WhatsApp. Having written there once is not
+    # enough, or someone removed from a private channel could keep asking.
+    with db.connect() as conn:
+        conn.execute("UPDATE groups SET channel = 'slack' WHERE external_id = %s", (env["gid"],))
+    monkeypatch.setattr(providers, "generate", lambda *a: pytest.fail("must not answer"))
+    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+
+
 def test_membership_survives_a_restart(env):
     import gateway_state
 
