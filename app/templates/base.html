@@ -26,6 +26,7 @@
   <title>{% block title %}Admin{% endblock %} · Group assistant</title>
   <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/components.css">
   <script src="/static/htmx.min.js"></script>
   <script src="/static/app.js" defer></script>
 </head>
@@ -72,10 +73,13 @@
       {% if trouble %}<div class="notice bad" role="alert">
         {% for kind, why in trouble %}<strong>{{ kind }}</strong> is enabled but {{ why }}{% if not loop.last %}; {% endif %}{% endfor %}.
         <a href="/admin/channels">Channels</a>{% if trouble | selectattr(1, 'equalto', 'waiting for a QR scan') | list %} · <a href="/setup/link">Scan the code</a>{% endif %}</div>{% endif %}
-      {% if flash %}<div class="notice {{ flash.kind }}" role="status">{{ flash.text }}</div>{% endif %}
       {% block body %}{% endblock %}
     </main>
   </div>
+</div>
+<div class="toasts" id="toasts">
+  {% if flash %}<div class="toast {{ flash.kind }}" role="{{ 'alert' if flash.kind == 'bad' else 'status' }}">
+    <span>{{ flash.text }}</span><button type="button" class="toast-close" aria-label="Dismiss">×</button></div>{% endif %}
 </div>
 </body>
 </html>

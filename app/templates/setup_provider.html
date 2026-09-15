@@ -1,10 +1,5 @@
 {% extends "setup_base.html" %}
 {% block step %}
-{% if ok is not none %}
-  {% if ok %}<div class="notice ok">Test passed. The model replied “{{ detail }}”.</div>
-  {% else %}<div class="notice bad">Test failed: {{ detail }}. The provider was saved anyway; fix the key or the
-    model name on the <a href="/admin/providers">Providers page</a>.</div>{% endif %}
-{% endif %}
 
 {% if providers %}
 <div class="card">

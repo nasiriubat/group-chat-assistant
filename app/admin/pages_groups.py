@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 
 import admin
 import admin_api
@@ -40,7 +40,10 @@ def index(request: Request):
 @actions.post("/groups")
 def create(channel: str = Form(), external_id: str = Form(), name: str = Form("")):
     row = admin_api.add_group({"channel": channel, "external_id": external_id, "name": name.strip() or None})
-    return RedirectResponse(f"/admin/groups/{row['id']}", status_code=303)
+    return admin.redirect(
+        f"/admin/groups/{row['id']}",
+        f"Added {row['name'] or row['external_id']}. It is active: its messages are logged from now on.",
+    )
 
 
 def threshold_stat(external_id, value):

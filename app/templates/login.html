@@ -6,6 +6,7 @@
   <title>Sign in · Group assistant</title>
   <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/components.css">
 </head>
 <body>
 <main class="signin">
@@ -14,6 +15,7 @@
       <span class="mark">GA</span>
       <span><strong>Group assistant</strong><small>v{{ version }}</small></span>
     </div>
+    {% if flash %}<p class="notice {{ flash.kind }}" role="status">{{ flash.text }}</p>{% endif %}
     <form method="post" action="/admin/login">
       <input type="hidden" name="next" value="{{ next }}">
       <label>Admin password

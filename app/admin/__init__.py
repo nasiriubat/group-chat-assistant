@@ -1,6 +1,7 @@
 """Server-rendered admin panel. Pages live in one module each under admin/."""
 
 import html
+import json
 import os
 import pathlib
 
@@ -44,7 +45,10 @@ def take_flash(request):
 
 
 def render(request, name, status_code=200, **ctx):
-    flash = take_flash(request)
+    # An htmx call swaps in a fragment that never shows the flash. Taking it
+    # there would eat a message meant for the next full page, and a poll can
+    # easily land between a redirect and the page it points at.
+    flash = None if request.headers.get("hx-request") else take_flash(request)
     # The wizard's own pages explain a missing link themselves.
     trouble = [] if request.url.path.startswith("/setup") else gateway_state.trouble()
     response = templates.TemplateResponse(
@@ -71,10 +75,20 @@ def redirect(path, message, kind="ok"):
     return response
 
 
+def toast(text, kind="ok"):
+    """Headers that make htmx raise the "toast" event app.js shows. An htmx
+    call has no next page to carry a flash to, so its result travels here."""
+    return {"HX-Trigger": json.dumps({"toast": {"kind": kind, "text": text}})}
+
+
 def error_response(request, status, detail):
     """A form that failed, as a page a person can read, with the way back."""
     if request.headers.get("hx-request"):
-        return HTMLResponse(f'<div class="notice bad" role="alert">{html.escape(str(detail))}</div>', status)
+        return HTMLResponse(
+            f'<div class="notice bad" role="alert">{html.escape(str(detail))}</div>',
+            status,
+            headers=toast(str(detail), "bad"),
+        )
     return templates.TemplateResponse(
         request,
         "error.html",
@@ -93,9 +107,15 @@ def error_response(request, status, detail):
 
 @public.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, next: str = "/admin"):
-    return templates.TemplateResponse(
-        request, "login.html", {"error": None, "next": auth.safe_next(next), "version": VERSION}
+    flash = take_flash(request)
+    response = templates.TemplateResponse(
+        request,
+        "login.html",
+        {"error": None, "flash": flash, "next": auth.safe_next(next), "version": VERSION},
     )
+    if flash is not None:
+        response.delete_cookie(FLASH)
+    return response
 
 
 @public.post("/login")
@@ -121,7 +141,7 @@ def login(request: Request, password: str = Form(), next: str = Form("/admin")):
 
 @forms.post("/logout")
 def logout():
-    res = RedirectResponse("/admin/login", status_code=303)
+    res = redirect("/admin/login", "Signed out.")
     res.delete_cookie(auth.COOKIE)
     return res
 

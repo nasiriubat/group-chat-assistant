@@ -91,8 +91,9 @@ app = FastAPI(lifespan=lifespan)
 
 
 def _wants_page(request):
-    return request.url.path.startswith(("/admin", "/setup")) and "text/html" in request.headers.get(
-        "accept", ""
+    # htmx sends no Accept header of its own, and its errors need reading too.
+    return request.url.path.startswith(("/admin", "/setup")) and (
+        "text/html" in request.headers.get("accept", "") or bool(request.headers.get("hx-request"))
     )
 
 
@@ -101,7 +102,10 @@ async def _http_error(request: Request, exc: HTTPException):
     # A redirect to the login page is an HTTPException too; only real errors
     # become a page.
     if _wants_page(request) and exc.status_code >= 400:
-        return admin.error_response(request, exc.status_code, exc.detail)
+        response = admin.error_response(request, exc.status_code, exc.detail)
+        # A signed-out htmx call carries HX-Redirect to the sign-in page.
+        response.headers.update(exc.headers or {})
+        return response
     return await http_exception_handler(request, exc)
 
 

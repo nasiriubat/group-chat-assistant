@@ -98,11 +98,16 @@ def delete_messages(group_id: int):
 
 @actions.post("/data/questions/clear")
 def clear_questions(group_id: str = Form(""), days: str = Form("")):
-    group = groups.get_by_id(int(group_id)) if group_id else None
-    if group_id and group is None:
+    try:
+        group_pk = int(group_id) if group_id.strip() else None
+        older_than = int(days) if days.strip() else None
+    except ValueError:
+        raise HTTPException(422, "days must be a whole number, and the group one from the list") from None
+    group = groups.get_by_id(group_pk) if group_pk is not None else None
+    if group_pk is not None and group is None:
         raise HTTPException(404)
     external_id = group["external_id"] if group else None
-    n = retention.clear_questions(external_id, int(days) if days.strip() else None)
+    n = retention.clear_questions(external_id, older_than)
     audit.log("data.clear_questions", external_id or "all", {"questions": n, "older_than_days": days or None})
     where = f"from {group['name'] or 'the group'}" if group else "from every group"
     return _redirect(f"Deleted {n} questions {where}")
@@ -112,7 +117,7 @@ def clear_questions(group_id: str = Form(""), days: str = Form("")):
 def purge(group_id: int = Form(), sender: str = Form()):
     group = groups.get_by_id(group_id)
     if group is None or not sender.strip():
-        raise HTTPException(422)
+        raise HTTPException(422, "pick a group and enter the member's id")
     counts = retention.purge_sender(group["external_id"], sender.strip())
     audit.log("member.purge", group["external_id"], {"sender": sender.strip(), **counts})
     return _redirect(

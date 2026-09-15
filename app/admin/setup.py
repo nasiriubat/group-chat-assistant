@@ -1,11 +1,10 @@
 """Five-step setup wizard: preflight, provider, link, groups, round trip."""
 
 import os
-from urllib.parse import urlencode
 
 import psycopg
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 
 import admin
 import admin_api
@@ -79,15 +78,8 @@ def preflight(request: Request, checks: int = 0):
 
 
 @pages.get("/provider", response_class=HTMLResponse)
-def provider(request: Request, ok: int | None = None, detail: str = ""):
-    return _page(
-        request,
-        "provider",
-        providers=providers.list_all(),
-        ok=ok,
-        detail=detail,
-        kinds=sorted(providers.KINDS),
-    )
+def provider(request: Request):
+    return _page(request, "provider", providers=providers.list_all(), kinds=sorted(providers.KINDS))
 
 
 @actions.post("/provider")
@@ -112,10 +104,15 @@ def add_provider(
         }
     )
     try:
-        result = {"ok": 1, "detail": admin_api.run_provider_test(row["id"])[:60]}
+        reply = admin_api.run_provider_test(row["id"])[:60]
     except HTTPException as e:
-        result = {"ok": 0, "detail": str(e.detail)[:200]}
-    return RedirectResponse(f"/setup/provider?{urlencode(result)}", status_code=303)
+        return admin.redirect(
+            "/setup/provider",
+            f"Test failed: {str(e.detail)[:200]}. The provider was saved anyway; "
+            "fix the key or the model name on the Providers page.",
+            "bad",
+        )
+    return admin.redirect("/setup/provider", f"Test passed. The model replied “{reply}”.")
 
 
 @pages.get("/link", response_class=HTMLResponse)
@@ -152,16 +149,21 @@ async def enable_groups(request: Request):
                 {"channel": g["channel"], "external_id": external_id, "name": g.get("subject")}
             )
             created += 1
-    return RedirectResponse(f"/setup/test?created={created}", status_code=303)
+    if not created:
+        return admin.redirect("/setup/groups", "Nothing new was ticked.", "info")
+    plural = "s" if created != 1 else ""
+    return admin.redirect(
+        "/setup/test", f"Enabled {created} group{plural}. The gateway picks them up within 30 seconds."
+    )
 
 
 @pages.get("/test", response_class=HTMLResponse)
-def round_trip(request: Request, created: int = 0):
+def round_trip(request: Request):
     with db.connect() as conn:
         since = conn.execute("SELECT coalesce(max(id), 0) AS id FROM query_log").fetchone()["id"]
     all_groups = groups.list_all()
     enabled = [g for g in all_groups if g["enabled"]]
-    return _page(request, "test", since=since, groups=enabled, all_groups=all_groups, created=created)
+    return _page(request, "test", since=since, groups=enabled, all_groups=all_groups)
 
 
 @pages.get("/test/status", response_class=HTMLResponse)

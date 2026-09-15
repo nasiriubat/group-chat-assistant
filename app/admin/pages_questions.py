@@ -74,20 +74,20 @@ def detail(request: Request, question_id: int):
 @actions.post("/questions/{question_id}/feedback", response_class=HTMLResponse)
 def feedback(request: Request, question_id: int, value: int = Form(), note: str = Form("")):
     if value not in (-1, 0, 1):
-        raise HTTPException(422)
+        raise HTTPException(422, "feedback is good, wrong or clear")
     with db.connect() as conn:
         conn.execute(
             "UPDATE query_log SET feedback = %s, feedback_note = %s WHERE id = %s",
             (value or None, note.strip() or None, question_id),
         )
     row, retrieved = _detail(question_id)
-    return admin.render(
-        request,
-        "question_detail.html",
-        row=row,
-        retrieved=retrieved,
-        saved={1: "good", -1: "wrong"}.get(value),
+    response = admin.render(request, "question_detail.html", row=row, retrieved=retrieved)
+    marked = {1: "good", -1: "wrong"}.get(value)
+    text = (
+        f"Marked {marked}. This row is now part of the exported eval set." if marked else "Feedback cleared."
     )
+    response.headers.update(admin.toast(text))
+    return response
 
 
 @actions.post("/questions/ask", response_class=HTMLResponse)

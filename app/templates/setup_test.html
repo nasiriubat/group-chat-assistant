@@ -1,7 +1,5 @@
 {% extends "setup_base.html" %}
 {% block step %}
-{% if created %}<div class="notice ok">Enabled {{ created }} group{{ 's' if created != 1 }}. The gateway picks
-  them up within 30 seconds.</div>{% endif %}
 {% if groups %}
 {% with groups=all_groups %}{% include "ask_box.html" %}{% endwith %}
 <div class="card">

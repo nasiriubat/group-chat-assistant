@@ -18,7 +18,8 @@ def test_provider_step_adds_tests_and_sets_default(browser, monkeypatch):
     before = groups.global_settings()["default_provider_id"]
     groups.set_global(default_provider_id=None)
     res = post(browser, "/setup/provider", kind="openai", api_key="k", model="m")
-    assert res.status_code == 303 and "ok=1" in res.headers["location"]
+    # The result travels in the flash, never the URL.
+    assert res.status_code == 303 and res.headers["location"] == "/setup/provider"
     pid = groups.global_settings()["default_provider_id"]
     assert pid is not None and providers.get(pid)["kind"] == "openai"
     page = browser.get(res.headers["location"]).text
@@ -62,7 +63,8 @@ def test_groups_step_enables_selected_groups(browser):
     gateway_state.update("whatsapp", connected=True, groups=[{"id": gid, "subject": "Cabin crew"}])
     assert "Cabin crew" in browser.get("/setup/groups").text
     res = post(browser, "/setup/groups", group=gid)
-    assert res.status_code == 303 and "created=1" in res.headers["location"]
+    assert res.status_code == 303 and res.headers["location"] == "/setup/test"
+    assert "Enabled 1 group." in browser.get("/setup/test").text
     g = groups.get(gid)
     assert g["name"] == "Cabin crew" and g["enabled"]
     groups.delete(g["id"])

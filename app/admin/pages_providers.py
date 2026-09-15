@@ -97,7 +97,7 @@ def list_models(
         raise HTTPException(422, "unknown kind")
     stored = providers.get(int(provider_id)) if provider_id.strip() else None
     if not api_key and stored is None:
-        return HTMLResponse('<span class="bad">Paste the key first.</span>')
+        return _failed("Paste the key first.")
     probe = {
         "kind": kind,
         "api_key": api_key or stored["api_key"],
@@ -106,10 +106,16 @@ def list_models(
     try:
         names = providers.models(probe)
     except Exception as e:  # any provider or network failure reads the same here
-        return HTMLResponse(f'<span class="bad">Could not list models: {admin.escape(str(e))}</span>')
+        return _failed(f"Could not list models: {e}")
     if not names:
-        return HTMLResponse('<span class="bad">The provider returned no models.</span>')
+        return _failed("The provider returned no models.")
     return admin.render(request, "model_picker.html", names=names, target=target)
+
+
+def _failed(text):
+    # 200, so htmx still swaps the reason in next to the button; the toast
+    # says it too, for whoever was looking elsewhere.
+    return HTMLResponse(f'<span class="bad">{admin.escape(text)}</span>', headers=admin.toast(text, "bad"))
 
 
 @actions.post("/providers/{provider_id}")
@@ -163,5 +169,6 @@ def test(provider_id: int):
     try:
         reply = admin_api.run_provider_test(provider_id)
     except HTTPException as e:
-        return HTMLResponse(f'<span class="bad">Failed: {admin.escape(str(e.detail))}</span>')
-    return HTMLResponse(f'<span class="ok">OK, replied "{admin.escape(reply[:60])}"</span>')
+        return _failed(f"Failed: {e.detail}")
+    text = f'OK, replied "{reply[:60]}"'
+    return HTMLResponse(f'<span class="ok">{admin.escape(text)}</span>', headers=admin.toast(text))

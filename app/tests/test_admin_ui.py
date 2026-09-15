@@ -60,6 +60,7 @@ def test_posts_need_the_csrf_token(browser):
 def test_static_assets_are_served(client):
     assert client.get("/static/htmx.min.js").status_code == 200
     assert client.get("/static/app.css").status_code == 200
+    assert client.get("/static/components.css").status_code == 200
 
 
 def csrf_of(browser):

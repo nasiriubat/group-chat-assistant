@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 
 import admin
 import audit
@@ -103,9 +103,16 @@ async def save(kind: str, request: Request):
 
 @actions.post("/channels/{kind}/delete")
 def delete(kind: str):
+    title = TITLES.get(kind, kind)
+    if kind in channels.KINDS and not channels.KINDS[kind]["fields"]:
+        # The phone pairing belongs to the linking flow; it can only be switched off.
+        return admin.redirect("/admin/channels", f"{title} cannot be removed, only disabled.", "bad")
     channels.delete(kind)
     audit.log("channel.delete", kind)
-    return RedirectResponse("/admin/channels", status_code=303)
+    return admin.redirect(
+        "/admin/channels",
+        f"Removed {title}. Its token is deleted and the gateway disconnects it within 30 seconds.",
+    )
 
 
 @actions.post("/channels/{kind}/relink")
@@ -114,4 +121,6 @@ def relink(kind: str):
         raise HTTPException(404, "this channel does not pair")
     gateway_state.request_relink(kind)
     audit.log("gateway.relink", kind)
-    return RedirectResponse("/setup/link", status_code=303)
+    return admin.redirect(
+        "/setup/link", "Unlinking the number. A new QR code appears here within 30 seconds."
+    )

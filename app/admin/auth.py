@@ -5,7 +5,7 @@ import hmac
 import os
 import secrets
 import time
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from fastapi import HTTPException, Request
 from itsdangerous import BadSignature, TimestampSigner
@@ -79,12 +79,24 @@ def csrf_token(request):
     return hmac.new(os.environ["SECRET_KEY"].encode(), sid.encode(), "sha256").hexdigest()
 
 
+def _sign_in_url(wanted):
+    # Only a path on this site: a full URL here would be an open redirect.
+    return f"/admin/login?next={quote(safe_next(wanted), safe='/?=&')}"
+
+
 def require_session(request: Request):
     if session_id(request) is None:
-        # Back to the page that was asked for, once signed in. Only a path on
-        # this site: a full URL here would be an open redirect.
+        if request.headers.get("hx-request"):
+            # An htmx call would follow a redirect and swap the sign-in form into
+            # a corner of the page. Send the whole tab, back to the page it was on.
+            page = urlsplit(request.headers.get("hx-current-url", ""))
+            wanted = (page.path + (f"?{page.query}" if page.query else "")) or "/admin"
+            raise HTTPException(
+                401, "Signed out; sign in again.", headers={"HX-Redirect": _sign_in_url(wanted)}
+            )
+        # Back to the page that was asked for, once signed in.
         wanted = request.url.path + (f"?{request.url.query}" if request.url.query else "")
-        raise HTTPException(303, headers={"Location": f"/admin/login?next={quote(wanted, safe='/?=&')}"})
+        raise HTTPException(303, headers={"Location": _sign_in_url(wanted)})
 
 
 def safe_next(value):
@@ -102,4 +114,4 @@ async def require_csrf(request: Request):
         sent = form.get("csrf")
     # Bytes, not str: compare_digest raises on a non-ASCII header.
     if not sent or not hmac.compare_digest(str(sent).encode(), csrf_token(request).encode()):
-        raise HTTPException(403, "bad csrf token")
+        raise HTTPException(403, "This page is out of date (bad csrf token). Reload it and try again.")

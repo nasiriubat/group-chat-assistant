@@ -32,6 +32,54 @@ document.addEventListener("input", (e) => {
   if (out) out.value = e.target.value;
 });
 
+// ---------- toasts ----------
+// The result of an action: the server's flash on a full page, a "toast" event
+// from an HX-Trigger header after an htmx call, or a failed request nobody
+// else reported. Errors stay until dismissed; they usually need reading twice.
+const TOAST_MS = 6000;
+
+function arm(el) {
+  if (!el.classList.contains("bad")) setTimeout(() => el.remove(), TOAST_MS);
+}
+
+function toast(text, kind = "ok") {
+  const box = document.getElementById("toasts");
+  if (!box || !text) return;
+  // A poll failing every few seconds is one problem, not a pile of them.
+  if ([...box.querySelectorAll(".toast span")].some((s) => s.textContent === text)) return;
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.setAttribute("role", kind === "bad" ? "alert" : "status");
+  const span = document.createElement("span");
+  span.textContent = text;
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "toast-close";
+  close.setAttribute("aria-label", "Dismiss");
+  close.textContent = "×";
+  el.append(span, close);
+  box.append(el);
+  arm(el);
+}
+
+document.querySelectorAll(".toast").forEach(arm);
+document.addEventListener("click", (e) => {
+  if (e.target.matches(".toast-close")) e.target.closest(".toast").remove();
+});
+document.addEventListener("toast", (e) => {
+  const d = e.detail?.value ?? e.detail ?? {};
+  toast(d.text, d.kind);
+});
+document.addEventListener("htmx:responseError", (e) => {
+  const xhr = e.detail.xhr;
+  // The panel's own errors already carry a toast, or send the tab to sign in.
+  if (xhr.getResponseHeader("HX-Trigger") || xhr.getResponseHeader("HX-Redirect")) return;
+  toast(`The panel answered ${xhr.status}. Reload the page and try again.`, "bad");
+});
+for (const failure of ["htmx:sendError", "htmx:timeout"]) {
+  document.addEventListener(failure, () => toast("Could not reach the panel. Is it still running?", "bad"));
+}
+
 // A dropdown that fills a text field (the model picker).
 document.addEventListener("change", (e) => {
   if (!e.target.matches("[data-fill]")) return;
