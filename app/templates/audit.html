@@ -6,7 +6,7 @@
 <div class="card">
   <form method="get" action="/admin/audit" class="filters">
     <label>Action
-      <select name="action">
+      <select name="action" data-search>
         <option value="">Every action</option>
         {% for a in actions_seen %}<option value="{{ a }}" {% if a == action %}selected{% endif %}>{{ a }}</option>{% endfor %}
       </select>

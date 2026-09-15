@@ -32,7 +32,8 @@
     </div>
     <label>API key <input name="api_key" type="password" autocomplete="new-password" required></label>
     <label>Model
-      <input id="model-new" name="model" placeholder="claude-sonnet-5 · gemini-3.8-flash · gpt-5.4-mini" required>
+      <input id="model-new" name="model" placeholder="claude-sonnet-5 · gemini-3.8-flash · gpt-5.4-mini"
+             list="model-new-options" data-search required>
       <span class="field-aside">
         <button type="button" class="link" hx-post="/admin/providers/models" hx-disabled-elt="this"
                 hx-vals='{"target": "model-new"}' hx-include="closest form" hx-target="#pick-new">List the models this key can use</button>

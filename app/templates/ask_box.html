@@ -4,7 +4,7 @@
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <div class="grid">
       <label>Group
-        <select name="group_id" required>
+        <select name="group_id" required data-search>
           {# A paused group still has its history; asking it from here is how you check what it knows. #}
           {% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}{% if not g.enabled %} (paused){% endif %}</option>{% endfor %}
         </select>

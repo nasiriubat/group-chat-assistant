@@ -2,39 +2,79 @@
 {% block title %}Channels{% endblock %}
 {% block subtitle %}<p class="sub">Where the assistant listens. Secrets are encrypted and never shown again.</p>{% endblock %}
 {% block body %}
-{% for c in view %}
-<div class="card">
-  <header>
-    <h3>{{ c.title }} <span class="pill {{ c.status[1] }}">{{ c.status[0] }}</span></h3>
-    {% if c.state.groups %}<span class="muted" style="font-size:12.5px">{{ c.state.groups | length }} conversation{{ 's' if c.state.groups | length != 1 }} visible</span>{% endif %}
-  </header>
-  <p class="card-note">{{ help[c.kind] }}
-    {% if c.state.qr_svg %}<a href="/setup/link">A QR code is waiting to be scanned →</a>{% endif %}</p>
-  <form method="post" action="/admin/channels/{{ c.kind }}">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    {% for name, label in c.fields %}
-    <label>{{ label }} {% if c.row and c.row.configured %}<small>stored; leave empty to keep it</small>{% endif %}
-      <input name="{{ name }}" type="password" autocomplete="new-password" {% if not (c.row and c.row.configured) %}required{% endif %}></label>
-    {% endfor %}
-    <label><input type="checkbox" name="enabled" value="true" {% if not c.row or c.row.enabled %}checked{% endif %}
-                  data-confirm-off="Disable {{ c.title }}? The gateway disconnects it within 30 seconds."> Enabled</label>
-    <div class="actions">
-      <button>Save</button>
-      {% if c.setup_url %}<a class="btn secondary" href="{{ c.setup_url }}" target="_blank" rel="noopener">Open the console ↗</a>{% endif %}
+<div class="card-grid">
+  {% for c in view %}
+  <div class="card item-card">
+    <div class="item-head">
+      <span class="mark" style="background:{{ c.color }}" aria-hidden="true">{{ c.title[0] }}</span>
+      <div>
+        <h3>{{ c.title }}</h3>
+        <span class="pill {{ c.status[1] }}">{{ c.short }}</span>
+      </div>
     </div>
-  </form>
-  <div class="actions" style="margin-top:14px">
-    {% if c.traits.pairs and c.row and c.row.enabled %}
-    <form method="post" action="/admin/channels/{{ c.kind }}/relink"
-          data-confirm="Unlink this number and show a new QR code? Nothing stored is touched.">
-      <input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Link a different number</button></form>
-    {% endif %}
-    {% if c.fields and c.row %}
-    <form method="post" action="/admin/channels/{{ c.kind }}/delete"
-          data-confirm="Remove the {{ c.title }} channel? Its token is deleted; its groups stay until you delete them.">
-      <input type="hidden" name="csrf" value="{{ csrf }}"><button class="danger">Remove</button></form>
+    {% if c.detail %}<p class="meta"><strong>{{ c.detail }}</strong></p>{% endif %}
+    <p class="meta">{{ c.summary }}</p>
+    {% if c.state.qr_svg %}<p class="meta"><a href="/setup/link">A QR code is waiting to be scanned →</a></p>{% endif %}
+    <div class="actions">
+      {% if c.traits.pairs and c.row and c.row.enabled and not c.state.connected %}
+      <a class="btn" href="/setup/link">Scan the QR code</a>
+      {% endif %}
+      <button type="button" data-open="channel-{{ c.kind }}" class="{{ 'secondary' if c.row }}">
+        {% if not c.fields %}Settings{% elif c.row %}Edit{% else %}Connect{% endif %}</button>
+      {% if c.row and (c.row.configured or not c.fields) %}
+      <form method="post" action="/admin/channels/{{ c.kind }}"
+            {% if c.row.enabled %}data-confirm="Disable {{ c.title }}? The gateway disconnects it within 30 seconds."{% endif %}>
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        {# No field means keep every stored secret; no enabled field means off. #}
+        {% if not c.row.enabled %}<input type="hidden" name="enabled" value="true">{% endif %}
+        <button class="link">{{ 'Disable' if c.row.enabled else 'Enable' }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% for c in view %}
+{% set failed = error and error.kind == c.kind %}
+<dialog class="modal" id="channel-{{ c.kind }}" aria-labelledby="channel-{{ c.kind }}-title" {% if failed %}data-open-on-load{% endif %}>
+  <div class="modal-body">
+    <div class="modal-head">
+      <h3 id="channel-{{ c.kind }}-title">{{ c.title }} <span class="pill {{ c.status[1] }}">{{ c.status[0] }}</span></h3>
+      <button type="button" class="icon" data-close aria-label="Close">×</button>
+    </div>
+    {% if failed %}<div class="notice bad" role="alert">{{ error.message[:1] | upper }}{{ error.message[1:] | trim('.') }}. Nothing was saved.</div>{% endif %}
+    <p class="card-note">{{ help[c.kind] }}</p>
+    <form method="post" action="/admin/channels/{{ c.kind }}">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      {% for name, label in c.fields %}
+      <label>{{ label }} {% if c.row and c.row.configured %}<small>stored; leave empty to keep it</small>{% endif %}
+        <input name="{{ name }}" type="password" autocomplete="new-password" {% if not (c.row and c.row.configured) %}required{% endif %}></label>
+      {% endfor %}
+      <label><input type="checkbox" name="enabled" value="true" {% if not c.row or c.row.enabled %}checked{% endif %}
+                    data-confirm-off="Disable {{ c.title }}? The gateway disconnects it within 30 seconds."> Enabled</label>
+      <div class="actions">
+        <button>Save</button>
+        {% if c.setup_url %}<a class="btn secondary" href="{{ c.setup_url }}" target="_blank" rel="noopener">Open the console ↗</a>{% endif %}
+      </div>
+    </form>
+    {% set relink = c.traits.pairs and c.row and c.row.enabled %}
+    {% set removable = c.fields and c.row %}
+    {% if relink or removable %}
+    <div class="modal-foot">
+      {% if relink %}
+      <form method="post" action="/admin/channels/{{ c.kind }}/relink"
+            data-confirm="Unlink this number and show a new QR code? Nothing stored is touched.">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Link a different number</button></form>
+      {% endif %}
+      {% if removable %}
+      <form method="post" action="/admin/channels/{{ c.kind }}/delete"
+            data-confirm="Remove the {{ c.title }} channel? Its token is deleted; its groups stay until you delete them.">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><button class="danger">Remove</button></form>
+      {% endif %}
+    </div>
     {% endif %}
   </div>
-</div>
+</dialog>
 {% endfor %}
 {% endblock %}

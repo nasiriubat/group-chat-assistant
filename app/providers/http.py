@@ -3,12 +3,23 @@ import httpx
 TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
 
+def _send(method, *args, **kwargs):
+    try:
+        return method(*args, **kwargs)
+    except httpx.LocalProtocolError:
+        # httpx quotes the refused header in its message, and that header holds
+        # the API key; the message ends up in the panel and in logs.
+        raise httpx.LocalProtocolError(
+            "a request header was refused before sending; does the API key contain a space or line break?"
+        ) from None
+
+
 def post(url, headers, body):
     # One retry on transport errors and 5xx. A 4xx is the provider's final word
     # on this request, so it raises straight away.
     for attempt in (1, 2):
         try:
-            res = httpx.post(url, headers=headers, json=body, timeout=TIMEOUT)
+            res = _send(httpx.post, url, headers=headers, json=body, timeout=TIMEOUT)
         except httpx.TransportError:
             if attempt == 2:
                 raise
@@ -20,7 +31,7 @@ def post(url, headers, body):
 
 
 def get(url, headers, params=None):
-    res = httpx.get(url, headers=headers, params=params, timeout=TIMEOUT)
+    res = _send(httpx.get, url, headers=headers, params=params, timeout=TIMEOUT)
     res.raise_for_status()
     return res.json()
 

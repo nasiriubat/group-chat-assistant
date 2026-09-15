@@ -105,7 +105,7 @@ The provider writes the answers. Retrieval and reranking stay on your machine,
 so the only thing that leaves it is the question plus the excerpts that answer
 it.
 
-Go to **Providers → Add a provider**, or the wizard's Model step.
+Go to **Providers** and press **Add provider**, or use the wizard's Model step.
 
 | Provider | Where the key comes from | Kind | Base URL | A good starting model |
 |---|---|---|---|---|
@@ -126,12 +126,16 @@ Then:
    provider's pricing page. They start at 0, which makes every answer look
    free and makes budget caps useless, so fill them in. A new install has a
    €10 monthly cap across all groups; change it on the Cost page.
-3. Press **List the models** and pick one from the dropdown. It asks the
-   provider what your key can actually use, so you never have to know a model
-   id by heart. Typing one by hand still works.
-4. Press **Test**. It makes one real call and shows the reply or the error.
-5. The first provider you add becomes the default, marked **default** on the
-   page: that is the one that answers everywhere. Press **Make default** on
+3. Press **List the models**. It asks the provider what your key can actually
+   use, and the **Model** field opens a list of them: type a few letters to
+   narrow it down and pick one, so you never have to know a model id by heart.
+   Typing one by hand still works.
+4. Press **Test before adding** (or **Test these settings** when editing). It
+   makes one real call with what is in the form, before anything is saved, and
+   shows the reply or the error. On a saved provider's card, **Test** checks
+   what is stored.
+5. The first provider you add becomes the default, marked **default** on its
+   card: that is the one that answers everywhere. Press **Make default** on
    another to switch. A group can override it under **Answer with** on its own
    page. If no provider is the default, every question is refused, and the
    Providers page says so in red.
@@ -147,8 +151,8 @@ Go to **Channels**. Each one is independent; you can run all five.
 
 ### WhatsApp, by pairing a phone
 
-1. On the Channels page make sure WhatsApp is **Enabled**, and press **Save**
-   if you changed it.
+1. On the Channels page, check the WhatsApp card is not disabled; if it is,
+   press **Enable** on it.
 2. Open **Setup → Connect WhatsApp**. A QR code appears within a few seconds.
 3. On the phone: **WhatsApp → Settings → Linked devices → Link a device**, and
    scan it.
@@ -164,7 +168,8 @@ The pairing survives restarts. It lives in `gateway/auth_state/`.
 2. Send `/setprivacy`, choose your bot, and select **Disable**. Without this a
    bot only sees messages that mention it, so it cannot build any memory.
 3. Add the bot to the group like any other member.
-4. Paste the token on the Channels page and enable it.
+4. On the Channels page press **Connect** on the Telegram card, paste the
+   token and press **Save**.
 5. Have somebody write in the group. Telegram bots cannot list their groups,
    so a group only appears once it has spoken.
 
@@ -179,8 +184,8 @@ The pairing survives restarts. It lives in `gateway/auth_state/`.
    permissions **Read Messages/View Channels**, **Send Messages** and
    **Read Message History**. Copy the generated URL, open it, and invite the
    bot to your server.
-5. Paste the token on the Channels page and enable it. Text channels appear as
-   soon as it connects.
+5. On the Channels page press **Connect** on the Discord card, paste the token
+   and press **Save**. Text channels appear as soon as it connects.
 
 ### Slack
 
@@ -245,10 +250,10 @@ workspaces an admin has to approve the install.
 
 **Connect it in the panel**
 
-5. Open **Channels** and find the **Slack** card. Paste the `xoxb-` token into
-   **Bot User OAuth Token** and the `xapp-` token into **App-level token**.
-   Leave **Enabled** ticked and press **Save**. If the two are swapped the
-   panel refuses them and says so.
+5. Open **Channels** and press **Connect** on the **Slack** card. Paste the
+   `xoxb-` token into **Bot User OAuth Token** and the `xapp-` token into
+   **App-level token**. Leave **Enabled** ticked and press **Save**. If the two
+   are swapped, the dialog stays open and says so.
 6. Within 30 seconds the card turns green: *connected as @assistant in
    Your Workspace*. If it says *enabled, not connected*, see the
    troubleshooting table at the end of this guide.
@@ -279,7 +284,7 @@ workspaces an admin has to approve the install.
 Group DMs (a direct message with several people) are ignored, and so are
 edits and deletions: an edited message keeps the text it was sent with.
 
-To stop it, untick **Enabled** on the Slack card, or press **Remove** to delete
+To stop it, press **Disable** on the Slack card, or **Edit → Remove** to delete
 both tokens. To revoke it on Slack's side as well, open the app at
 [api.slack.com/apps](https://api.slack.com/apps) and delete it or reinstall it,
 which issues a new bot token.
@@ -308,8 +313,8 @@ of the gateway's port 8080 first.
    uses it to verify that a webhook really came from Meta.
 5. Invent a **verify token**. It is any string you choose; Meta echoes it back
    once to prove you own the endpoint.
-6. Paste all four values on the Channels page and enable the channel. The
-   gateway starts listening on port 8080.
+6. On the Channels page press **Connect** on the WhatsApp Cloud API card, paste
+   all four values and press **Save**. The gateway starts listening on port 8080.
 7. Back in Meta: **WhatsApp → Configuration → Webhook → Edit**. Callback URL
    is `https://your-domain/webhook/whatsapp_cloud`, the verify token is the
    one you invented. Save, then **Manage** and subscribe to the `messages`
@@ -464,8 +469,8 @@ hours during which it stays silent.
 
 ## 10 Change or remove a connection
 
-**Change the WhatsApp number.** Channels → WhatsApp → **Link a different
-number**. The gateway logs out, clears the old pairing and shows a fresh QR at
+**Change the WhatsApp number.** Channels → WhatsApp card → **Settings** →
+**Link a different number**. The gateway logs out, clears the old pairing and shows a fresh QR at
 Setup → Connect WhatsApp. Nothing in the database is touched, so old messages
 and answers stay. Groups stay enabled, but their ids belong to the old
 account's view of them: if the new number is not in the same groups, enable
@@ -475,14 +480,15 @@ the right ones again on the Groups page.
 gateway cannot start at all, stop it, delete the contents of
 `gateway/auth_state/`, start it, and scan again.
 
-**Remove Telegram, Discord or the Cloud API.** Channels → **Remove**. The
+**Remove Telegram, Discord, Slack or the Cloud API.** Channels → the card's
+**Edit** → **Remove**. The
 token is deleted and the gateway stops that channel within 30 seconds. Their
 groups stay in the database; delete them from the Groups page if you want
 them gone. WhatsApp cannot be removed, only disabled, because it is the
 channel the panel's linking flow belongs to.
 
-**Rotate a token without downtime.** Paste the new one over the old one on the
-Channels page. Blank fields keep what is stored, so you only retype what
+**Rotate a token without downtime.** Press **Edit** on the channel's card and
+paste the new one. Blank fields keep what is stored, so you only retype what
 changed.
 
 **Delete a group's data.** Groups → the group → **Remove group** stops it

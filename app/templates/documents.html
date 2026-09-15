@@ -14,7 +14,7 @@
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <div class="grid">
       <label>Available to
-        <select name="group_id">
+        <select name="group_id" data-search>
           <option value="">Every group</option>
           {% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}
         </select>

@@ -9,7 +9,7 @@
     <input type="hidden" name="filter" value="{{ filter }}">
     <label>Search <input name="q" value="{{ q }}" placeholder="a word from the question or the answer"></label>
     <label>Group
-      <select name="group">
+      <select name="group" data-search>
         <option value="">Every group</option>
         {% for g in groups %}<option value="{{ g.external_id }}" {% if g.external_id == group %}selected{% endif %}>{{ g.name or g.external_id }}</option>{% endfor %}
       </select>

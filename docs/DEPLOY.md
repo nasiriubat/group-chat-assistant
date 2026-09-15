@@ -132,7 +132,8 @@ docker compose up -d --build
 ```
 
 WhatsApp usually carries on with the copied pairing. If the Channels page shows
-it asking for a QR instead, press **Link a different number** and scan again;
+it asking for a QR instead, press **Settings** on the WhatsApp card, then
+**Link a different number**, and scan again;
 nothing stored is lost.
 
 ### Starting fresh

@@ -8,7 +8,7 @@ import pathlib
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 import gateway_state
 from admin import auth
@@ -28,19 +28,23 @@ setup_forms = APIRouter(
 )
 
 
+FLASH_SECONDS = 60
+
+
 def _flash_signer():
-    return URLSafeSerializer(os.environ["SECRET_KEY"], salt="flash")
+    return URLSafeTimedSerializer(os.environ["SECRET_KEY"], salt="flash")
 
 
 def take_flash(request):
     """The one-line result of the last action, or None. Signed, so a crafted
-    link cannot put words in the panel's mouth, and read once."""
+    link cannot put words in the panel's mouth; timed, because the cookie's
+    max_age is only a request to the browser; and read once."""
     raw = request.cookies.get(FLASH)
     if not raw:
         return None
     try:
-        return _flash_signer().loads(raw)
-    except BadSignature:
+        return _flash_signer().loads(raw, max_age=FLASH_SECONDS)
+    except BadSignature:  # SignatureExpired is one too
         return None
 
 
@@ -68,7 +72,7 @@ def redirect(path, message, kind="ok"):
     response.set_cookie(
         FLASH,
         _flash_signer().dumps({"kind": kind, "text": message}),
-        max_age=60,
+        max_age=FLASH_SECONDS,
         httponly=True,
         samesite="lax",
     )
@@ -81,6 +85,17 @@ def toast(text, kind="ok"):
     return {"HX-Trigger": json.dumps({"toast": {"kind": kind, "text": text}})}
 
 
+def plain_error(detail):
+    """pydantic's report of a bad field, as one sentence."""
+    text = str(detail)
+    if "validation error" in text:
+        lines = [ln.strip() for ln in text.splitlines()[1:] if ln.strip() and not ln.startswith("    For")]
+        text = "; ".join(
+            f"{lines[i]}: {lines[i + 1].split('[')[0].strip()}" for i in range(0, len(lines) - 1, 2)
+        )
+    return text
+
+
 def error_response(request, status, detail):
     """A form that failed, as a page a person can read, with the way back."""
     if request.headers.get("hx-request"):
@@ -89,7 +104,7 @@ def error_response(request, status, detail):
             status,
             headers=toast(str(detail), "bad"),
         )
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "error.html",
         {
@@ -103,6 +118,9 @@ def error_response(request, status, detail):
         },
         status_code=status,
     )
+    # A message meant for this page must not surface on a later, unrelated one.
+    response.delete_cookie(FLASH)
+    return response
 
 
 @public.get("/login", response_class=HTMLResponse)

@@ -1,4 +1,2 @@
-<select class="picker" data-fill="{{ target }}" aria-label="Models this key can use">
-  <option value="">{{ names | length }} models — pick one</option>
-  {% for name in names %}<option value="{{ name }}">{{ name }}</option>{% endfor %}
-</select>
+<datalist id="{{ target }}-options">{% for name in names %}<option value="{{ name }}"></option>{% endfor %}</datalist>
+<span class="ok" data-open-list="{{ target }}">{{ names | length }} models. Start typing in the Model field to pick one.</span>

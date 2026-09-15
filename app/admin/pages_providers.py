@@ -31,8 +31,22 @@ def _options(raw):
     return value
 
 
+def _price(raw, field):
+    # Taken as text, so a typo comes back inside the dialog instead of as a bare error page.
+    try:
+        return float(raw) if raw.strip() else 0.0
+    except ValueError:
+        raise HTTPException(422, f"{field} is not a number") from None
+
+
 @pages.get("/providers", response_class=HTMLResponse)
 def page(request: Request):
+    return _render(request)
+
+
+def _render(request, error=None, status_code=200):
+    """Cards, a dialog per provider and one to add. `error` reopens the dialog
+    whose form was refused, with what was typed (never the key) and why."""
     with db.connect() as conn:
         answered = {
             r["provider_id"]: r["n"]
@@ -53,35 +67,52 @@ def page(request: Request):
         kinds={k: KIND_HELP.get(k, "") for k in providers.KINDS},
         answered=answered,
         used_by=used_by,
+        error=error,
+        status_code=status_code,
     )
+
+
+def _refused(request, dialog, detail, typed):
+    return _render(request, {"dialog": dialog, "message": admin.plain_error(detail), "values": typed}, 422)
 
 
 @actions.post("/providers")
 def create(
-    name: str = Form(),
-    kind: str = Form(),
-    api_key: str = Form(),
-    model: str = Form(),
+    request: Request,
+    name: str = Form(""),
+    kind: str = Form(""),
+    api_key: str = Form(""),
+    model: str = Form(""),
     base_url: str = Form(""),
-    price_in: float = Form(0),
-    price_out: float = Form(0),
+    price_in: str = Form("0"),
+    price_out: str = Form("0"),
     options: str = Form(""),
 ):
-    fields = {
-        "name": name,
-        "kind": kind,
-        "api_key": api_key,
-        "model": model,
-        "base_url": base_url or None,
-        "price_in": price_in,
-        "price_out": price_out,
-        "options": _options(options),
-    }
-    row = admin_api.add_provider(fields)
+    typed = {"name": name, "kind": kind, "model": model, "base_url": base_url}
+    typed |= {"price_in": price_in, "price_out": price_out, "options": options}
+    try:
+        if not (name.strip() and api_key.strip() and model.strip()):
+            raise HTTPException(422, "a provider needs a name, an API key and a model")
+        row = admin_api.add_provider(
+            {
+                "name": name.strip(),
+                "kind": kind,
+                "api_key": api_key,
+                "model": model.strip(),
+                "base_url": base_url.strip() or None,
+                "price_in": _price(price_in, "price in"),
+                "price_out": _price(price_out, "price out"),
+                "options": _options(options),
+            }
+        )
+    except HTTPException as e:
+        if e.status_code != 422:
+            raise
+        return _refused(request, "provider-new", e.detail, typed)
     return admin.redirect("/admin/providers", f"Added {row['name']}. Press Test to make one real call.")
 
 
-# Before the /providers/{provider_id} routes, or "models" is parsed as an id.
+# Before the /providers/{provider_id} routes, or "models" and "check" are parsed as ids.
 @actions.post("/providers/models", response_class=HTMLResponse)
 def list_models(
     request: Request,
@@ -91,11 +122,12 @@ def list_models(
     base_url: str = Form(""),
     provider_id: str = Form(""),
 ):
-    """Ask the provider what this key can use, and hand back a dropdown. The key
-    may be the one already stored, which is why an id is accepted instead."""
+    """Ask the provider what this key can use, as suggestions for the Model
+    field. The key may be the one already stored, which is why an id is accepted."""
     if kind not in providers.KINDS:
         raise HTTPException(422, "unknown kind")
     stored = providers.get(int(provider_id)) if provider_id.strip() else None
+    api_key = api_key.strip()
     if not api_key and stored is None:
         return _failed("Paste the key first.")
     probe = {
@@ -112,6 +144,43 @@ def list_models(
     return admin.render(request, "model_picker.html", names=names, target=target)
 
 
+@actions.post("/providers/check", response_class=HTMLResponse)
+def check(
+    kind: str = Form(""),
+    model: str = Form(""),
+    api_key: str = Form(""),
+    base_url: str = Form(""),
+    options: str = Form(""),
+    provider_id: str = Form(""),
+):
+    """One real call with what the form holds, before anything is saved. An
+    empty key field stands for the stored key, as on the model list."""
+    stored = providers.get(int(provider_id)) if provider_id.strip().isdigit() else None
+    kind = kind or (stored["kind"] if stored else "")
+    api_key = api_key.strip()
+    if kind not in providers.KINDS:
+        return _failed("Pick a kind first.")
+    if not (api_key or stored):
+        return _failed("Paste the key first.")
+    if not model.strip():
+        return _failed("Type or pick a model first.")
+    probe = {
+        **(stored or {"name": "unsaved", "price_in": 0, "price_out": 0}),
+        "kind": kind,
+        "model": model.strip(),
+        "api_key": api_key or stored["api_key"],
+        "base_url": base_url.strip() or None,
+        "options": _options(options),
+    }
+    try:
+        reply = admin_api.check_provider(probe)
+    except HTTPException as e:
+        return _failed(f"Failed: {e.detail}")
+    audit.log("provider.check", provider_id or "new", {"kind": kind, "model": probe["model"]})
+    text = f'OK, replied "{reply[:60]}". Nothing is saved until you press Save.'
+    return HTMLResponse(f'<span class="ok">{admin.escape(text)}</span>', headers=admin.toast(text))
+
+
 def _failed(text):
     # 200, so htmx still swaps the reason in next to the button; the toast
     # says it too, for whoever was looking elsewhere.
@@ -120,29 +189,39 @@ def _failed(text):
 
 @actions.post("/providers/{provider_id}")
 def update(
+    request: Request,
     provider_id: int,
-    name: str = Form(),
-    model: str = Form(),
+    name: str = Form(""),
+    model: str = Form(""),
     base_url: str = Form(""),
-    price_in: float = Form(0),
-    price_out: float = Form(0),
+    price_in: str = Form("0"),
+    price_out: str = Form("0"),
     options: str = Form(""),
     enabled: bool = Form(False),
     api_key: str = Form(""),
 ):
-    fields = {
-        "name": name,
-        "model": model,
-        "base_url": base_url or None,
-        "price_in": price_in,
-        "price_out": price_out,
-        "options": _options(options),
-        "enabled": enabled,
-    }
-    if api_key:
-        fields["api_key"] = api_key
-    admin_api.apply_provider(provider_id, fields)
-    return admin.redirect("/admin/providers", f"Saved {name}.")
+    typed = {"name": name, "model": model, "base_url": base_url, "enabled": enabled}
+    typed |= {"price_in": price_in, "price_out": price_out, "options": options}
+    try:
+        if not (name.strip() and model.strip()):
+            raise HTTPException(422, "a provider needs a name and a model")
+        fields = {
+            "name": name.strip(),
+            "model": model.strip(),
+            "base_url": base_url.strip() or None,
+            "price_in": _price(price_in, "price in"),
+            "price_out": _price(price_out, "price out"),
+            "options": _options(options),
+            "enabled": enabled,
+        }
+        if api_key:
+            fields["api_key"] = api_key
+        admin_api.apply_provider(provider_id, fields)
+    except HTTPException as e:
+        if e.status_code != 422:
+            raise
+        return _refused(request, f"provider-{provider_id}", e.detail, typed)
+    return admin.redirect("/admin/providers", f"Saved {name.strip()}.")
 
 
 @actions.post("/providers/{provider_id}/delete")

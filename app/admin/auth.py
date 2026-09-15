@@ -80,8 +80,9 @@ def csrf_token(request):
 
 
 def _sign_in_url(wanted):
-    # Only a path on this site: a full URL here would be an open redirect.
-    return f"/admin/login?next={quote(safe_next(wanted), safe='/?=&')}"
+    # Only a path on this site: a full URL here would be an open redirect. Its
+    # own ? and & are encoded, so a filtered page comes back with every filter.
+    return f"/admin/login?next={quote(safe_next(wanted), safe='/')}"
 
 
 def require_session(request: Request):
@@ -100,7 +101,10 @@ def require_session(request: Request):
 
 
 def safe_next(value):
-    return value if value.startswith("/") and not value.startswith("//") else "/admin"
+    # Browsers read a backslash as a slash, so "/\evil.example" is "//evil.example".
+    local = value.startswith("/") and not value.startswith("//")
+    clean = "\\" not in value and all(c.isprintable() for c in value)
+    return value if local and clean else "/admin"
 
 
 async def require_csrf(request: Request):

@@ -12,7 +12,7 @@
     <div class="grid">
       <label>Display name <input name="name" value="{{ group.name or '' }}"></label>
       <label>Answer with <small>the default is set on the Providers page</small>
-        <select name="provider_id">
+        <select name="provider_id" data-search>
           <option value="">Global default{% for p in providers if p.id == default_id %} — {{ p.name }} · {{ p.model }}{% endfor %}</option>
           {% for p in providers %}<option value="{{ p.id }}" {% if p.id|string == group.provider_id|string %}selected{% endif %} {% if not p.enabled %}disabled{% endif %}>{{ p.name }} · {{ p.model }}{% if not p.enabled %} (disabled){% endif %}</option>{% endfor %}
         </select>
@@ -77,8 +77,11 @@
       <div class="grid">
         <label>From <input name="quiet_start" type="time" value="{{ s.quiet_hours.start if s.quiet_hours else '' }}"></label>
         <label>To <input name="quiet_end" type="time" value="{{ s.quiet_hours.end if s.quiet_hours else '' }}"></label>
-        <label>Time zone <small>an IANA name</small><input name="quiet_tz" list="zones" value="{{ s.quiet_hours.tz if s.quiet_hours else 'Europe/Helsinki' }}">
-          <datalist id="zones"><option>Europe/Helsinki</option><option>Europe/London</option><option>Europe/Berlin</option><option>UTC</option><option>America/New_York</option><option>Asia/Kolkata</option><option>Asia/Dhaka</option></datalist></label>
+        {% set tz = s.quiet_hours.tz if s.quiet_hours else 'Europe/Helsinki' %}
+        <label>Time zone <small>type a city to find it</small>
+          <select name="quiet_tz" data-search>
+            {% for z in zones %}<option {% if z == tz %}selected{% endif %}>{{ z }}</option>{% endfor %}
+          </select></label>
       </div>
     </fieldset>
   </div>

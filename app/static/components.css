@@ -71,7 +71,6 @@ button.link {
   font-size: 12.5px; font-weight: 500; box-shadow: none;
 }
 button.link:hover { background: none; text-decoration: underline; }
-select.picker { width: auto; max-width: 100%; padding: 5px 26px 5px 9px; font-size: 12.5px; }
 
 /* ---------- in flight ---------- */
 
@@ -89,7 +88,6 @@ button.secondary.htmx-request::after, button.link.htmx-request::after {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { button.htmx-request::after { animation: none; } }
-input.filled { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(14, 98, 69, 0.15); }
 .notice[role="alert"] { font-weight: 500; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
 .filters label { margin: 0; min-width: 160px; }
@@ -97,6 +95,56 @@ input.filled { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(14, 98, 69, 0
 /* A status and the one action that changes it, side by side in a table cell. */
 .row-action { display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .row-action form { margin: 0; }
+
+/* ---------- card grids ---------- */
+
+/* Channels and providers: one card each, the state at a glance, one action. */
+.card-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+.card-grid > .card + .card { margin-top: 0; }
+.item-card { display: flex; flex-direction: column; gap: 10px; }
+.item-head { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.item-head h3 { margin: 0 0 3px; }
+.mark {
+  width: 34px; height: 34px; border-radius: 9px; flex: none; display: grid; place-items: center;
+  color: #fff; font-weight: 700; font-size: 15px; background: var(--accent);
+}
+.meta { color: var(--text-muted); font-size: 12.5px; margin: 0; overflow-wrap: anywhere; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.item-card > .actions { margin-top: auto; padding-top: 4px; }
+
+/* ---------- dialogs ---------- */
+
+dialog.modal {
+  padding: 0; border: 0; border-radius: var(--radius); width: min(580px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px); background: var(--surface); color: var(--text); box-shadow: var(--shadow-lift);
+}
+dialog.modal::backdrop { background: rgba(15, 17, 23, 0.5); }
+/* The padding lives on the body, so a click on the dialog element itself is a click on the backdrop. */
+.modal-body { padding: 18px 20px 20px; max-height: calc(100vh - 48px); overflow-y: auto; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.modal-head h3 { margin: 0; }
+.modal-body > .notice { margin-bottom: 14px; }
+.modal-foot {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+button.icon { background: none; border: 0; box-shadow: none; color: var(--text-faint); padding: 0 4px; font-size: 22px; line-height: 1; }
+button.icon:hover { background: none; color: var(--text); }
+
+/* ---------- searchable lists ---------- */
+
+.search { position: relative; display: block; }
+label > .search { margin-top: 5px; }
+.search-list {
+  position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 4px);
+  margin: 0; padding: 4px; list-style: none; max-height: 260px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-lift);
+}
+.search-list li { padding: 6px 9px; border-radius: 4px; font-size: 13px; font-weight: 400; overflow-wrap: anywhere; }
+.search-list [role="option"] { cursor: pointer; }
+.search-list [role="option"]:hover, .search-list [aria-selected="true"] { background: var(--accent-wash); color: var(--accent-dark); }
+.search-list .search-note { color: var(--text-faint); font-size: 12px; }
 
 /* ---------- toasts ---------- */
 

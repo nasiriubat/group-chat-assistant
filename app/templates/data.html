@@ -48,7 +48,7 @@
         data-confirm="Import this file into the group selected? An import into the wrong group can only be undone by deleting that group's chats.">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <div class="grid">
-      <label>Group <select name="group_id" required>{% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}</select></label>
+      <label>Group <select name="group_id" required data-search>{% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}</select></label>
       <label>Export file <input type="file" name="file" accept=".txt" required></label>
     </div>
     <button>Import</button>
@@ -63,9 +63,9 @@
   <form method="post" action="/admin/data/purge" data-confirm="Erase this member's history? This cannot be undone.">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <div class="grid">
-      <label>Group <select name="group_id" required>{% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}</select></label>
+      <label>Group <select name="group_id" required data-search>{% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}</select></label>
       <label>Sender id <small>start typing a name or number</small>
-        <input name="sender" list="senders" placeholder="358401234567@s.whatsapp.net" required>
+        <input name="sender" list="senders" placeholder="358401234567@s.whatsapp.net" required data-search>
         <datalist id="senders">{% for m in senders %}<option value="{{ m.sender_jid }}">{{ m.name or '' }}</option>{% endfor %}</datalist></label>
     </div>
     <button class="danger">Erase</button>
@@ -83,7 +83,7 @@
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <div class="grid">
       <label>Group
-        <select name="group_id">
+        <select name="group_id" data-search>
           <option value="">Every group</option>
           {% for g in groups %}<option value="{{ g.id }}">{{ g.name or g.external_id }}</option>{% endfor %}
         </select>

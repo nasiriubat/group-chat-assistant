@@ -55,7 +55,8 @@ def test_a_signed_out_htmx_call_sends_the_whole_tab_to_sign_in(client):
         follow_redirects=False,
     )
     assert res.status_code == 401
-    assert res.headers["hx-redirect"] == "/admin/login?next=/admin/providers?x=1"
+    # The page's own query is encoded, so every filter survives the trip through sign-in.
+    assert res.headers["hx-redirect"] == "/admin/login?next=/admin/providers%3Fx%3D1"
 
 
 def test_a_provider_test_result_is_a_toast_as_well(browser, monkeypatch):
@@ -81,15 +82,57 @@ def test_actions_that_used_to_say_nothing_now_do(browser):
     res = post(
         browser, "/admin/groups", channel="whatsapp", external_id=f"test-{uuid.uuid4()}@g.us", name="Quiet"
     )
-    assert "Added Quiet" in browser.get(res.headers["location"]).text
-    groups.delete(int(res.headers["location"].rsplit("/", 1)[1]))
+    try:
+        assert "Added Quiet" in browser.get(res.headers["location"]).text
+    finally:
+        groups.delete(int(res.headers["location"].rsplit("/", 1)[1]))
 
     res = post(browser, "/admin/channels/whatsapp/relink")
-    assert res.headers["location"] == "/setup/link" and "new QR code" in browser.get("/setup/link").text
-    gateway_state.take_relink()
+    try:
+        assert res.headers["location"] == "/setup/link" and "new QR code" in browser.get("/setup/link").text
+    finally:
+        gateway_state.take_relink()
 
     res = post(browser, "/admin/logout")
     assert "Signed out" in browser.get(res.headers["location"]).text
+
+
+def test_a_backslash_or_control_character_is_not_a_local_path():
+    from admin import auth
+
+    assert auth.safe_next("/\\evil.example") == "/admin"
+    assert auth.safe_next("/admin/x\n") == "/admin"
+    assert auth.safe_next("/admin/groups?x=1") == "/admin/groups?x=1"
+
+
+def test_an_old_flash_is_ignored_even_if_the_browser_kept_it(browser, monkeypatch):
+    import itsdangerous.timed
+
+    import admin
+
+    real = itsdangerous.timed.time.time
+    monkeypatch.setattr(itsdangerous.timed.time, "time", lambda: real() - 3600)
+    stale = admin._flash_signer().dumps({"kind": "ok", "text": "An hour old"})
+    monkeypatch.undo()
+    browser.cookies.set("flash", stale)
+    assert "An hour old" not in browser.get("/admin").text
+
+
+def test_a_refused_header_never_repeats_the_key(monkeypatch):
+    import httpx
+    import pytest
+
+    from providers import http
+
+    def refuse(*args, **kwargs):
+        raise httpx.LocalProtocolError("Illegal header value b'Bearer sk-SECRET123 '")
+
+    monkeypatch.setattr(httpx, "post", refuse)
+    monkeypatch.setattr(httpx, "get", refuse)
+    for call in (lambda: http.post("https://x.invalid", {}, {}), lambda: http.get("https://x.invalid", {})):
+        with pytest.raises(httpx.TransportError) as refused:
+            call()
+        assert "sk-SECRET123" not in str(refused.value)
 
 
 def test_a_bad_number_is_a_readable_error_not_a_crash(browser):

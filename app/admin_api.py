@@ -6,7 +6,7 @@ import secrets
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 import audit
 import bootstrap
@@ -40,7 +40,16 @@ def _validate(model, fields):
 # --- providers -------------------------------------------------------------
 
 
-class ProviderIn(BaseModel):
+class _ProviderFields(BaseModel):
+    # A key pasted with a trailing space or newline cannot go in a header, and
+    # httpx's refusal quotes the whole header, key included, into the error.
+    @field_validator("name", "api_key", "model", "base_url", check_fields=False)
+    @classmethod
+    def _strip(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+
+class ProviderIn(_ProviderFields):
     name: str
     kind: str
     api_key: str
@@ -52,7 +61,7 @@ class ProviderIn(BaseModel):
     enabled: bool = True
 
 
-class ProviderPatch(BaseModel):
+class ProviderPatch(_ProviderFields):
     name: str | None = None
     api_key: str | None = None
     model: str | None = None
@@ -93,16 +102,22 @@ def remove_provider(provider_id):
     bootstrap.ensure_default()
 
 
-def run_provider_test(provider_id):
-    provider = providers.get(provider_id)
-    if provider is None:
-        raise HTTPException(404)
+def check_provider(provider):
+    """One real call. The provider's or the network's refusal comes back as a
+    502 with its reason, for the panel to show."""
     try:
-        reply = providers.check(provider)
+        return providers.check(provider)
     except httpx.HTTPStatusError as e:
         raise HTTPException(502, f"{e.response.status_code}: {e.response.text[:300]}") from e
     except httpx.TransportError as e:
         raise HTTPException(502, f"unreachable: {e}") from e
+
+
+def run_provider_test(provider_id):
+    provider = providers.get(provider_id)
+    if provider is None:
+        raise HTTPException(404)
+    reply = check_provider(provider)
     audit.log("provider.test", str(provider_id), {"reply": reply})
     return reply
 
@@ -174,10 +189,14 @@ def apply_group(group_id, fields):
         raise HTTPException(422, "nothing to update")
     if clean.get("provider_id") is not None and providers.get(clean["provider_id"]) is None:
         raise HTTPException(422, "that provider no longer exists")
+    before = groups.get_by_id(group_id)
     row, purged = groups.apply(group_id, **clean)
     if row is None:
-        raise HTTPException(404)
+        raise HTTPException(404, "that group no longer exists")
     audit.log("group.update", str(group_id), clean)
+    # Its own entry, so a pause is findable in the log whether the panel or the API made it.
+    if before and before["enabled"] != row["enabled"]:
+        audit.log("group.resume" if row["enabled"] else "group.pause", row["external_id"])
     for sender, counts in purged:
         audit.log("member.purge", row["external_id"], {"sender": sender, **counts})
     return row, purged

@@ -76,16 +76,162 @@ document.addEventListener("htmx:responseError", (e) => {
   if (xhr.getResponseHeader("HX-Trigger") || xhr.getResponseHeader("HX-Redirect")) return;
   toast(`The panel answered ${xhr.status}. Reload the page and try again.`, "bad");
 });
+const OFFLINE = "Could not reach the panel. Is it still running?";
 for (const failure of ["htmx:sendError", "htmx:timeout"]) {
-  document.addEventListener(failure, () => toast("Could not reach the panel. Is it still running?", "bad"));
+  document.addEventListener(failure, () => toast(OFFLINE, "bad"));
+}
+// The panel answered again: the outage toast is no longer true.
+document.addEventListener("htmx:afterRequest", (e) => {
+  if (!e.detail.successful) return;
+  document.querySelectorAll("#toasts .toast span").forEach((s) => s.textContent === OFFLINE && s.parentElement.remove());
+});
+
+// ---------- dialogs ----------
+// data-open="id" opens that <dialog>; data-close closes the one it sits in; a
+// click on the backdrop lands on the dialog element itself and closes it too.
+// A dialog the server marks data-open-on-load holds a form that came back
+// with an error, so it opens with the page.
+document.addEventListener("click", (e) => {
+  const opener = e.target.closest("[data-open]");
+  if (opener) document.getElementById(opener.dataset.open)?.showModal();
+  if (e.target.closest("[data-close]") || e.target.tagName === "DIALOG") e.target.closest("dialog")?.close();
+});
+document.querySelectorAll("dialog[data-open-on-load]").forEach((d) => d.showModal());
+
+// ---------- searchable lists ----------
+// data-search on a <select>, or on an <input list="…">, puts a filter box over
+// its options. The real field stays in the form and is what gets submitted;
+// an input keeps accepting free text (a model name the list does not know).
+const SHOWN = 200; // a provider can return hundreds of models; typing narrows them
+
+function searchable(field) {
+  if (field.dataset.searchReady) return;
+  field.dataset.searchReady = "1";
+  const strict = field.tagName === "SELECT";
+  const wrap = document.createElement("span");
+  wrap.className = "search";
+  field.before(wrap);
+  const input = strict ? document.createElement("input") : field;
+  const listId = field.getAttribute("list");
+  if (strict) {
+    input.type = "text";
+    input.setAttribute("aria-label", field.getAttribute("aria-label") || field.name);
+    field.hidden = true;
+    wrap.append(input, field);
+  } else {
+    field.removeAttribute("list"); // the browser's own dropdown would open on top of ours
+    wrap.append(field);
+  }
+  const list = document.createElement("ul");
+  list.className = "search-list";
+  list.id = `search-${Math.random().toString(36).slice(2, 10)}`;
+  list.setAttribute("role", "listbox");
+  list.hidden = true;
+  wrap.append(list);
+  Object.assign(input, { autocomplete: "off" });
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-controls", list.id);
+  input.setAttribute("aria-expanded", "false");
+
+  const current = () => field.selectedOptions?.[0]?.textContent.trim() ?? "";
+  const options = () =>
+    strict
+      ? [...field.options].filter((o) => !o.disabled).map((o) => ({ value: o.value, label: o.textContent.trim() }))
+      : [...(document.getElementById(listId)?.options ?? [])].map((o) => {
+          // A datalist option may carry a name as its text: "Anna · 358401234567@s.whatsapp.net".
+          const text = o.textContent.trim();
+          return { value: o.value, label: text ? `${text} · ${o.value}` : o.value };
+        });
+  let shown = [];
+  let active = -1;
+  if (strict) input.value = current();
+
+  function open(isOpen) {
+    list.hidden = !isOpen;
+    input.setAttribute("aria-expanded", String(isOpen));
+    if (!isOpen) input.removeAttribute("aria-activedescendant");
+  }
+  function render(query) {
+    const q = query.trim().toLowerCase();
+    const all = options();
+    shown = all.filter((o) => !q || o.label.toLowerCase().includes(q)).slice(0, SHOWN);
+    active = -1;
+    list.replaceChildren(
+      ...shown.map((o, i) => {
+        const li = document.createElement("li");
+        Object.assign(li, { id: `${list.id}-${i}`, textContent: o.label });
+        li.setAttribute("role", "option");
+        li.dataset.index = i;
+        return li;
+      }),
+    );
+    const hidden = all.filter((o) => !q || o.label.toLowerCase().includes(q)).length - shown.length;
+    if (hidden > 0 || !shown.length) {
+      const note = document.createElement("li");
+      note.className = "search-note";
+      note.textContent = hidden > 0 ? `${hidden} more; keep typing` : strict ? "No match" : "Nothing listed; what you type is kept";
+      list.append(note);
+    }
+    open(all.length > 0);
+  }
+  function move(step) {
+    if (!shown.length) return;
+    active = (active + step + shown.length) % shown.length;
+    list.querySelectorAll("[role=option]").forEach((li, i) => li.setAttribute("aria-selected", String(i === active)));
+    input.setAttribute("aria-activedescendant", `${list.id}-${active}`);
+    document.getElementById(`${list.id}-${active}`).scrollIntoView({ block: "nearest" });
+  }
+  function pick(i) {
+    const o = shown[i];
+    if (!o) return;
+    if (strict) {
+      field.value = o.value;
+      input.value = o.label;
+      field.dispatchEvent(new Event("change", { bubbles: true }));
+    } else {
+      input.value = o.value;
+    }
+    open(false);
+  }
+
+  input.addEventListener("focus", () => {
+    if (strict) input.select();
+    render("");
+  });
+  input.addEventListener("input", () => render(input.value));
+  input.addEventListener("blur", () => {
+    open(false);
+    if (strict) input.value = current();
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (list.hidden) render(strict ? "" : input.value);
+      move(e.key === "ArrowDown" ? 1 : -1);
+    } else if (e.key === "Enter" && !list.hidden && active >= 0) {
+      e.preventDefault();
+      pick(active);
+    } else if (e.key === "Escape" && !list.hidden) {
+      // Close the list, not the dialog it may be in.
+      e.preventDefault();
+      e.stopPropagation();
+      open(false);
+    }
+  });
+  // mousedown, not click: the input must not lose focus (and close the list) first.
+  list.addEventListener("mousedown", (e) => {
+    const li = e.target.closest("[role=option]");
+    e.preventDefault();
+    if (li) pick(Number(li.dataset.index));
+  });
 }
 
-// A dropdown that fills a text field (the model picker).
-document.addEventListener("change", (e) => {
-  if (!e.target.matches("[data-fill]")) return;
-  const target = document.getElementById(e.target.dataset.fill);
-  if (target && e.target.value) {
-    target.value = e.target.value;
-    target.classList.add("filled");
-  }
+document.querySelectorAll("[data-search]").forEach(searchable);
+document.addEventListener("htmx:load", (e) => {
+  const elt = e.detail.elt;
+  if (!(elt instanceof Element)) return;
+  elt.querySelectorAll("[data-search]").forEach(searchable);
+  // A model list just arrived: open it under the field it belongs to.
+  if (elt.dataset.openList) document.getElementById(elt.dataset.openList)?.focus();
 });

@@ -1,3 +1,5 @@
+import zoneinfo
+
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
@@ -13,6 +15,8 @@ from admin import pages_group_status
 
 pages = APIRouter()
 actions = APIRouter()
+# Every IANA name the quiet-hours check can load, for the searchable picker.
+ZONES = sorted(zoneinfo.available_timezones())
 
 
 @pages.get("/groups", response_class=HTMLResponse)
@@ -102,6 +106,7 @@ def _edit_page(request, group, error=None, status=200):
         threshold=threshold_stat(group["external_id"], float(group["settings"]["confidence_threshold"])),
         members=members_of(group["external_id"]),
         decisions=decisions_of(group["external_id"]),
+        zones=ZONES,
         error=error,
         status_code=status,
     )
@@ -222,23 +227,12 @@ def save(
     except HTTPException as e:
         if e.status_code != 422:
             raise
-        return _edit_page(request, as_typed(), _plain(e.detail), 422)
-    note = pages_group_status.record(group, row) or "Saved."
+        return _edit_page(request, as_typed(), admin.plain_error(e.detail), 422)
+    note = pages_group_status.change_note(group, row) or "Saved."
     if purged:
         erased = ", ".join(f"{sender} ({c['messages']} messages)" for sender, c in purged)
         note = f"{note} Erased everything written by {erased}."
     return admin.redirect(f"/admin/groups/{group_id}", note)
-
-
-def _plain(detail):
-    """pydantic's report of a bad field, as one sentence."""
-    text = str(detail)
-    if "validation error" in text:
-        lines = [ln.strip() for ln in text.splitlines()[1:] if ln.strip() and not ln.startswith("    For")]
-        text = "; ".join(
-            f"{lines[i]}: {lines[i + 1].split('[')[0].strip()}" for i in range(0, len(lines) - 1, 2)
-        )
-    return text
 
 
 @actions.post("/groups/{group_id}/optout")

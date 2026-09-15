@@ -45,6 +45,21 @@ LABELS = {
     "bot_token": "Bot User OAuth Token (xoxb-…)",
     "app_token": "App-level token (xapp-…)",
 }
+# The card's letter in the platform's own colour, so the grid reads at a glance.
+COLORS = {
+    "whatsapp": "#25d366",
+    "telegram": "#229ed9",
+    "discord": "#5865f2",
+    "slack": "#4a154b",
+    "whatsapp_cloud": "#128c7e",
+}
+SUMMARY = {
+    "whatsapp": "A phone paired by QR code. Watches the groups that number is in.",
+    "telegram": "A bot you create with @BotFather.",
+    "discord": "A bot in your server's text channels.",
+    "slack": "A Slack app over Socket Mode. No public URL needed.",
+    "whatsapp_cloud": "Meta's official API, for private questions on a business number.",
+}
 
 
 def status(kind, row, state):
@@ -67,22 +82,36 @@ def status(kind, row, state):
 
 @pages.get("/channels", response_class=HTMLResponse)
 def page(request: Request):
+    return _render(request)
+
+
+def _render(request, error=None, status_code=200):
+    """The grid, and a dialog per channel. `error` reopens the dialog whose form
+    was refused, with the reason inside, instead of leaving for an error page."""
     rows = {c["kind"]: c for c in channels.list_all()}
     state = gateway_state.all_channels()
-    view = [
-        {
-            "kind": kind,
-            "title": TITLES.get(kind, kind),
-            "setup_url": SETUP_URL.get(kind),
-            "traits": traits,
-            "row": rows.get(kind),
-            "state": state[kind],
-            "status": status(kind, rows.get(kind), state[kind]),
-            "fields": [(f, LABELS.get(f, f)) for f in traits["fields"]],
-        }
-        for kind, traits in channels.KINDS.items()
-    ]
-    return admin.render(request, "channels.html", view=view, help=HELP)
+    view = []
+    for kind, traits in channels.KINDS.items():
+        text, css = status(kind, rows.get(kind), state[kind])
+        # A card's pill says "connected"; the long account id gets its own line.
+        short, _, who = text.partition(" as ") if text.startswith("connected as ") else (text, "", "")
+        view.append(
+            {
+                "kind": kind,
+                "title": TITLES.get(kind, kind),
+                "setup_url": SETUP_URL.get(kind),
+                "traits": traits,
+                "row": rows.get(kind),
+                "state": state[kind],
+                "status": (text, css),
+                "short": short,
+                "detail": f"As {who}" if who else "",
+                "fields": [(f, LABELS.get(f, f)) for f in traits["fields"]],
+                "color": COLORS.get(kind, "var(--accent)"),
+                "summary": SUMMARY.get(kind, ""),
+            }
+        )
+    return admin.render(request, "channels.html", view=view, help=HELP, error=error, status_code=status_code)
 
 
 @actions.post("/channels/{kind}")
@@ -96,7 +125,7 @@ async def save(kind: str, request: Request):
     try:
         channels.upsert(kind, config or None, enabled)
     except ValueError as e:
-        raise HTTPException(422, str(e)) from e
+        return _render(request, {"kind": kind, "message": str(e)}, 422)
     audit.log("channel.update", kind, {"enabled": enabled, **dict.fromkeys(config, "set")})
     return admin.redirect("/admin/channels", "Saved. The gateway picks it up within 30 seconds.")
 
