@@ -159,6 +159,7 @@ Pipeline for one question, with numbers measured on a laptop CPU:
 ## Development
 
 ```
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db   # publishes Postgres on 127.0.0.1:5433
 pip install -r app/requirements-dev.txt
 ruff check app && ruff format --check app
 pytest                      # set DATABASE_URL, SECRET_KEY, ADMIN_PASSWORD, GATEWAY_TOKEN for the integration tests;

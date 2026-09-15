@@ -1,0 +1,7 @@
+# For running pytest from the host against the scratch database:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db
+# 5433 by default so it does not fight another project's Postgres for 5432.
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-5433}:5432"

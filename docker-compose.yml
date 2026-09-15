@@ -7,9 +7,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      # Loopback only: the app and gateway reach it over the compose network.
-      - "127.0.0.1:5432:5432"
+    # No host port: the app and gateway reach it over the compose network, and
+    # a published 5432 collides with any other Postgres on the machine. Tests
+    # on the host use docker-compose.dev.yml.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U assistant -d assistant"]
       interval: 5s
