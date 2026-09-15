@@ -5,6 +5,18 @@ recorded manual check behind it; the panel's pages were walked in a real
 browser on desktop and at phone width on 5 Sept 2026, with no automated
 accessibility check.
 
+## The v1.3 panel (walked in Chromium, 15 Sept 2026)
+
+Checked: flash and htmx error toasts, success toasts fading while errors
+stay, an expired session sending the tab to sign in, the Channels and
+Providers cards and dialogs, the model list filling a searchable Model field
+and a keyboard pick from it, and the searchable time zone list.
+
+Not checked: the network-failure toast (the panel was never unreachable during
+the walk), dark mode, Safari and Firefox, and a screen reader on the dialogs
+and searchable lists, which follow the ARIA combobox pattern but were not
+tried with one.
+
 ## Verified on a real phone (5 Sept 2026)
 
 - Pairing by QR, staying connected across a gateway restart without a new

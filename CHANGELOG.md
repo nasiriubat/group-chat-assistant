@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.3.0 — 15 September 2026
+
+**Every action says what happened.** Results show as toasts, after a page load
+and after an htmx call alike; errors stay until dismissed. Failures that used
+to show nothing now say so: an htmx call the server refused, a panel that
+cannot be reached, a session that ended mid-page (which sends the tab to sign
+in and back). Group create, channel remove, relink and sign-out report what
+they did, and the setup wizard no longer carries its results in the URL.
+
+**Pause a group without deleting it.** Pause and Resume on every row of the
+groups list, with a confirmation that says what pausing does. History,
+decisions and retention stay; new messages are not kept. The audit log records
+`group.pause` and `group.resume` whether the panel or the API made the change,
+and a paused group can still be asked from the Questions page.
+
+**Channels and Providers, redesigned.** Cards with the state at a glance and
+one main action; connecting and editing happen in a dialog. A refused form
+reopens its dialog with the reason and everything that was typed, secrets
+excepted. A provider can be tested with settings that are not saved yet. The
+model list fills a searchable Model field, a group's time zone is a searchable
+list of every IANA zone, and group pickers across the panel are searchable.
+No new dependency: a native `<dialog>` and a small filter in `app.js`.
+
+**Fixed from review.** An API key pasted with a trailing space or newline
+could be quoted back in an error, a toast and the logs; keys are stripped when
+saved and the HTTP library's message is replaced before it goes anywhere.
+Sign-in keeps every filter of the page it returns to, a `/\` path is no longer
+taken for a local one, and the flash expires on the server, not only in the
+browser.
+
 ## v1.2.1 — 15 September 2026
 
 **Ready for a server.** `docs/DEPLOY.md` takes a CSC cPouta instance or a

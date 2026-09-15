@@ -100,13 +100,31 @@ limits stated.
 - Upload progress for large files; a time limit on "reading…".
 - Per-group analytics: refusal rate, trend, top askers.
 - Knowledge export: documents and decisions as a file.
-- A global default answer language; a picker for time zones.
+- A global default answer language. (The time zone picker shipped in v1.3.)
 - Post-relink group repair: map old group ids to the new number's view.
 - Serving the docs from the panel, so a fork or an air-gapped install is not
   sent to the upstream repository.
 - A `SECRET_KEY` rotation script that re-encrypts in one transaction, and
   splitting the session-signing key from the at-rest key.
 - Baking the models into the image so first boot needs no network.
+
+## Deferred from v1.3 (15 Sept 2026)
+
+- **Several accounts per channel kind**: two WhatsApp numbers, two Slack
+  workspaces. Everything is keyed by channel kind today: the `channels` primary
+  key, the app's gateway state, the supervisor, the WhatsApp pairing directory
+  and the Cloud API's port. The plan that was cut: channels get an id and a
+  label; groups record their account and refuse to be claimed by two; the
+  gateway runs one instance per account, each serving only its own groups; a
+  pairing directory per WhatsApp number; Slack ids qualified by workspace
+  (cheapest to do before real Slack data exists); private questions answered
+  only from groups of the account they arrived on. Roughly 40 places change.
+- **Private messages to a paired WhatsApp number.** Every private message gets
+  a reply: an answer for members, "I can only answer privately about groups
+  you are in" for everyone else. On the operator's own number that means
+  friends get a bot reply. Candidates: stay silent instead of declining, or a
+  setting for whether private messages are answered at all (both values are
+  reasonable, so it qualifies as a setting).
 
 ## Parked — memory and features
 

@@ -3,6 +3,60 @@
 One entry per phase: what the code review and security review found, and
 what was done about it. Findings that were not fixed say why.
 
+## v1.3.0 — code and security review of the panel work, 15 Sept 2026
+
+Toasts, group pause, and the Channels and Providers redesign, reviewed against
+the installed htmx 2.0.4 source rather than its docs. No high-severity
+finding. Everything below is fixed and tested unless it says otherwise.
+
+Security review:
+
+- **Medium: an API key could be quoted back.** A key pasted with a trailing
+  space or newline cannot go in a header, and httpx's refusal quotes the whole
+  header. That message reached the model-list error, the Test result, the new
+  toast header, the setup wizard's flash, and the extraction and document
+  logs. Keys and base URLs are stripped when saved, and the provider HTTP
+  helper replaces the refusal with a fixed message before it goes anywhere.
+- **Low: `/\evil.example` passed as a local path.** Nothing exploitable today,
+  since Starlette percent-encodes the redirect, but a browser reads the
+  backslash as a slash. `safe_next` refuses backslashes and control characters.
+- **Low: the sign-in return path dropped everything after the first `&`.** Its
+  query is encoded now.
+- **Low: the flash signature had no timestamp**, so the cookie's 60 seconds was
+  only a request to the browser. It is a timed signature checked on load.
+- **Info: pausing through the API wrote no `group.pause` entry.** The shared
+  group update writes it, so the panel and the API log alike.
+
+Code review:
+
+- **A group deleted in another tab turned Pause into a 500.** Pausing goes
+  through the shared update, which answers 404 with a reason.
+- **"Could not reach the panel" outlived the outage**, as error toasts do. It
+  clears on the next request that succeeds.
+- **A flash could survive an error page** and appear on a later, unrelated one.
+  Error pages clear it.
+- **Two tests cleaned up only when every assert passed.** They use `finally`.
+
+Found in the browser walk: a connected channel's status pill carried the full
+account id and wrapped into a block; the card says "connected" and puts the id
+on its own line. Prices showed as `€0.0000`; they show as `€0`.
+
+Recorded, not changed:
+
+- **The flash cookie is not marked Secure.** `admin.redirect` has no request
+  to read the scheme from, and after the key fix the flash carries nothing
+  secret. The session cookie, which does, is Secure behind HTTPS.
+- **An htmx error's HTML body is never shown**, because htmx does not swap
+  4xx/5xx by default; the toast is what the admin sees. The body stays for
+  clients that are not htmx.
+- **A paired WhatsApp number answers every private message**, members with an
+  answer and everyone else with "I can only answer privately about groups you
+  are in". On an operator's own number that means friends get a bot reply.
+  This is a product decision, raised with the operator and recorded in
+  BACKLOG.md.
+- **The new dialogs and searchable lists need JavaScript**, as htmx already
+  does. Without it a searchable list is the plain browser control.
+
 ## v1.2.0 — code and security review of the Slack channel, 15 Sept 2026
 
 Two reviews of the Slack change before release, each tracing behaviour in the
