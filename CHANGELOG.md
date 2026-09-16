@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.2 — 16 September 2026
+
+**Slack stayed connected for nine seconds at a time.** `@slack/socket-mode`
+declares undici 7 as a peer dependency. The gateway installs with
+`--legacy-peer-deps`, which Baileys needs and which skips peers, so undici 7
+was never installed and Slack's socket used the undici 6 that Discord brings
+in. Its keepalive calls undici's `ping()`, which 6.x does not have, so every
+heartbeat threw and the client dropped the connection and reconnected, about
+every nine seconds, with messages lost in between. `undici` 7.29.1 is a
+direct dependency now; Discord keeps its own 6.28.1 nested under it. Measured
+after the fix: one connect and no ping failures in 75 seconds, where there had
+been nine connects.
+
 ## v1.3.1 — 16 September 2026
 
 **Private questions are off by default, and off is silent.** A paired WhatsApp

@@ -545,6 +545,8 @@ channel is not connected. The panel refreshes Health every 30 seconds.
 | Discord messages arrive empty | MESSAGE CONTENT INTENT is off in the developer portal. |
 | Slack card says "enabled, not connected" | `docker compose logs gateway \| grep -i slack`: a "slack connection failed" or "channel failed to start" line carries Slack's error. The gateway tries again every 30 seconds. `invalid_auth` means a token was revoked or mistyped; `not_allowed_token_type` means the app-level token lacks `connections:write`. Check **Socket Mode** is switched on in the app's settings too. |
 | Slack channel never appears in the groups list | The bot has not been invited: `/invite @assistant` in that channel. |
+| Slack connects over and over, with `Failed to send ping to Slack` in the log | The gateway is missing undici 7, which the Socket Mode SDK needs. Fixed in v1.3.2: update and rebuild with `docker compose up -d --build gateway`. |
+| Slack is connected but says nothing | The channel has to be enabled as a group: **Groups → Conversations your channels can see → Start listening**, or the wizard's Groups step. Until then its messages are ignored. |
 | Slack bot connected but never answers | Is the channel enabled on the Groups page? Did the message mention the bot or start with the trigger word? A reply in a thread without either is not a question. |
 | Slack shared files show "a web page" in the gateway log | The `files:read` scope is missing. Add it under **OAuth & Permissions** and reinstall the app. |
 | Meta rejects the webhook | It must be HTTPS and publicly reachable, and the verify token must match exactly. |
