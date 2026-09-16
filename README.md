@@ -40,9 +40,12 @@ quote of the message it came from, or says it does not know.
 - Decisions with history: each chunk is mined for decisions; a newer one
   supersedes the old, and answers say what changed and when. Reply "wrong,
   it's X" to an answer and the correction outranks the original.
-- Ask privately: a DM to the bot is answered from the groups you belong to,
-  with a text citation. Private questions are never stored as group messages,
-  though like every question they appear in the admin's question log.
+- Ask privately, if the group allows it: **off by default**, because a paired
+  number is usually somebody's own phone and a private message to it is meant
+  for them. Turned on for a group, a DM from one of its members is answered
+  from that group with a text citation; everybody else gets no reply at all.
+  Private questions are never stored as group messages, though like every
+  question they appear in the admin's question log.
 - Monthly budget caps per group and globally (€10 a month out of the box),
   ten questions per member per ten minutes, member opt-out, quiet hours,
   retention. Every question is logged with retrieved chunks, timings, tokens

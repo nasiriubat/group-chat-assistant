@@ -19,7 +19,6 @@ import query_log
 import retrieval
 
 NO_PROVIDER = "No LLM provider is configured yet. Ask the admin to add one."
-NO_DM_GROUP = "I can only answer privately about groups you are in and that allow it."
 # "no" and "ei" only count with punctuation, so "no idea what…" is a question.
 CORRECTION = re.compile(
     r"^\s*(?:(?:wrong|nope|actually|correction|väärin|korjaus)[\s,.:!-]*|(?:no|ei)[,.:!-]\s*)", re.I
@@ -227,8 +226,10 @@ def answer_privately(q):
     it with a text citation. Private questions are never stored as messages."""
     candidates = groups.dm_candidates(q.sender_jid, gateway_state.members())
     if not candidates:
+        # Silence, not a decline. Nobody who messages a personal number should
+        # learn there is a bot on it, let alone be answered by one.
         observe.count("ask_total", outcome="dm_unknown")
-        return {"answer": NO_DM_GROUP, "quote": None, "outcome": "dm_unknown"}
+        return {"answer": None, "quote": None, "outcome": "dm_unknown"}
     by_id = {g["external_id"]: g for g in candidates[:DM_CANDIDATES]}
     with db.connect() as conn:
         found = retrieval.search_many(list(by_id), q.question, conn=conn)

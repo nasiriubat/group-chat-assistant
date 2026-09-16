@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.1 — 16 September 2026
+
+**Private questions are off by default, and off is silent.** A paired WhatsApp
+number is often somebody's own phone, where a private message is meant for
+them; the assistant used to reply to every one of them, answering members and
+telling everyone else "I can only answer privately about groups you are in".
+Now **Allow private questions** starts off on a new group, and with no group
+allowing it the assistant says nothing at all to a private message — not a
+decline, and not the rate-limit notice either. Turn it on for a group and its
+members can ask privately again; nobody else ever gets a reply. The WhatsApp
+Cloud API channel does nothing but private questions, so it needs this on in
+at least one group.
+
 ## v1.3.0 — 15 September 2026
 
 **Every action says what happened.** Results show as toasts, after a page load

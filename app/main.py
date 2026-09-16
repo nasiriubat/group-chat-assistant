@@ -251,7 +251,9 @@ class Question(BaseModel):
 def ask(q: Question):
     throttled = asking.throttle(q)
     if throttled:
-        return {"answer": throttled["answer"], "quote": None}
+        # A private question says nothing at all, even to say "slow down":
+        # whoever is on the other end may not be asking the assistant anything.
+        return {"answer": None if q.group_id is None else throttled["answer"], "quote": None}
     if q.group_id is None:
         res = asking.answer_privately(q)
         return {"answer": res["answer"], "quote": None}

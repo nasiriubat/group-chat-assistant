@@ -54,7 +54,11 @@ class Settings(BaseModel):
     # makes the gateway download media, which is the behaviour most likely to
     # get a WhatsApp number flagged, and every image costs one model call.
     index_files: bool = False
-    allow_dm: bool = True  # members may ask the bot privately about this group
+    # Off by default, and off means silent. A paired WhatsApp number is often
+    # somebody's own phone, where a private message is meant for them and a bot
+    # answering it is the surprise. Turned on, members of this group may ask
+    # privately about it; everyone else still gets no reply.
+    allow_dm: bool = False
     correction_ack: str = "Noted, I'll go with that from now on."
 
 

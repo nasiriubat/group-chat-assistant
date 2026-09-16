@@ -277,9 +277,10 @@ workspaces an admin has to approve the install.
    quote-reply, so the link is the citation. A follow-up in that thread needs
    the mention or the trigger word again.
 10. For a private question, open the app under **Apps** in Slack's sidebar and
-    write in its **Messages** tab. It answers from the channels you are a
-    member of whose group has **Allow private questions** turned on. Leave a
-    channel and it stops answering about it within a minute.
+    write in its **Messages** tab. This needs **Allow private questions** on
+    the group, which is off by default; with it off the app says nothing. On,
+    it answers from the channels you are a member of. Leave a channel and it
+    stops answering about it within a minute.
 
 Group DMs (a direct message with several people) are ignored, and so are
 edits and deletions: an edited message keeps the text it was sent with.
@@ -448,9 +449,17 @@ raising it saves provider calls but the eval found it refuses real questions.
 The refusal text, and the answer language, where `auto` follows the question.
 
 **Memory.** Decision tracking mines each new chunk for decisions so answers can
-say what changed and when; it costs one small model call per chunk. Private
-questions let members of this group message the bot directly. The correction
-acknowledgement is what it replies when somebody corrects it.
+say what changed and when; it costs one small model call per chunk. The
+correction acknowledgement is what it replies when somebody corrects it.
+
+**Allow private questions** is **off by default**, and off means silent: a
+private message to the assistant gets no reply of any kind. That is deliberate
+on WhatsApp, where the number is often somebody's own phone and a private
+message to it is meant for them, not for a bot. Turn it on for a group and its
+members can message the assistant directly and get an answer from that group
+with a text citation; anybody who is not a member still gets nothing back.
+The WhatsApp Cloud API channel does nothing else, so it needs this on in at
+least one group.
 
 **Decisions on record** lists what the assistant currently treats as settled,
 with what each decision replaced. A bad extraction or a mischievous

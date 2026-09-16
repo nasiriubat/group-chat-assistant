@@ -33,7 +33,8 @@ HELP = {
     "so no public URL is needed. Paste the Bot User OAuth Token (xoxb-) and an app-level token with "
     "connections:write (xapp-), then /invite the bot to each channel. A channel appears here once invited.",
     "whatsapp_cloud": "Meta's official API, for private questions on a business number. It answers people "
-    "who are in one of your groups, inside WhatsApp's 24-hour window. It cannot watch group chats: Meta "
+    "who are in one of your groups, inside WhatsApp's 24-hour window, and only for groups with Allow "
+    "private questions turned on, which is off by default. It cannot watch group chats: Meta "
     "caps those at 8 participants and requires an Official Business Account. Needs a public HTTPS webhook "
     "at /webhook/whatsapp_cloud on the gateway.",
 }

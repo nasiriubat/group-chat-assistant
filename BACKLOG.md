@@ -119,12 +119,6 @@ limits stated.
   pairing directory per WhatsApp number; Slack ids qualified by workspace
   (cheapest to do before real Slack data exists); private questions answered
   only from groups of the account they arrived on. Roughly 40 places change.
-- **Private messages to a paired WhatsApp number.** Every private message gets
-  a reply: an answer for members, "I can only answer privately about groups
-  you are in" for everyone else. On the operator's own number that means
-  friends get a bot reply. Candidates: stay silent instead of declining, or a
-  setting for whether private messages are answered at all (both values are
-  reasonable, so it qualifies as a setting).
 
 ## Parked — memory and features
 

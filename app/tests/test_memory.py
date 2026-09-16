@@ -34,7 +34,11 @@ def env(client, monkeypatch):
     import retrieval
 
     gid = f"test-{uuid.uuid4()}@g.us"
-    group = groups.create("whatsapp", gid, name="Cabin crew", settings={"confidence_threshold": 0.5})
+    # Private questions are opt-in since v1.3.1; the tests below are about what
+    # a group that has opted in does, so this one has.
+    group = groups.create(
+        "whatsapp", gid, name="Cabin crew", settings={"confidence_threshold": 0.5, "allow_dm": True}
+    )
     provider = providers.create("p", "openai", "k", "m")
     groups.set_global(default_provider_id=provider["id"])
     with db.connect() as conn:
@@ -107,7 +111,7 @@ def test_a_whatsapp_group_nobody_has_reported_yet_has_no_members(env, monkeypatc
 
     # WhatsApp can list members; until the gateway has, writing there is not enough.
     monkeypatch.setattr(providers, "generate", lambda *a: pytest.fail("must not answer"))
-    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+    assert ask(env, group_id=None, question="who books?")["answer"] is None
 
 
 def test_a_slack_channel_nobody_has_reported_yet_has_no_members(env, monkeypatch):
@@ -119,7 +123,7 @@ def test_a_slack_channel_nobody_has_reported_yet_has_no_members(env, monkeypatch
     with db.connect() as conn:
         conn.execute("UPDATE groups SET channel = 'slack' WHERE external_id = %s", (env["gid"],))
     monkeypatch.setattr(providers, "generate", lambda *a: pytest.fail("must not answer"))
-    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+    assert ask(env, group_id=None, question="who books?")["answer"] is None
 
 
 def test_membership_survives_a_restart(env):
@@ -136,12 +140,14 @@ def test_membership_survives_a_restart(env):
     assert env["gid"] not in gateway_state.members()
 
 
-def test_private_question_from_a_stranger_is_declined(env, monkeypatch):
+def test_a_private_question_from_a_stranger_gets_no_reply_at_all(env, monkeypatch):
     import providers
 
+    # Silence, not a decline: a private message to a paired personal number is
+    # usually meant for its owner, and a bot replying to it is the surprise.
     monkeypatch.setattr(providers, "generate", lambda *a: pytest.fail("must not answer"))
     res = ask(env, group_id=None, sender_jid="stranger@s", question="who books?")
-    assert res["answer"].startswith("I can only answer privately")
+    assert res["answer"] is None and res["quote"] is None
 
 
 def test_reported_membership_counts_even_without_messages(env):
@@ -160,27 +166,28 @@ def test_a_reported_member_list_overrides_having_written(env, monkeypatch):
     # Anna wrote in the group but the channel no longer lists her: she left.
     gateway_state.update("whatsapp", connected=True, groups=[{"id": env["gid"], "members": ["someone@s"]}])
     monkeypatch.setattr(providers, "generate", lambda *a: pytest.fail("must not answer a former member"))
-    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+    assert ask(env, group_id=None, question="who books?")["answer"] is None
     gateway_state.update("whatsapp", groups=[])
 
 
-def test_private_answers_respect_allow_dm(env):
+def test_private_answers_are_off_until_a_group_allows_them(env):
     import groups
 
+    assert groups.Settings().allow_dm is False  # a new group answers no private questions
     groups.update(env["group"]["id"], settings={**env["group"]["settings"], "allow_dm": False})
-    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+    assert ask(env, group_id=None, question="who books?")["answer"] is None
 
 
 def test_private_answers_respect_opt_out_and_quiet_hours(env):
     import groups
 
     groups.update(env["group"]["id"], settings={**env["group"]["settings"], "opt_out": ["anna@s"]})
-    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+    assert ask(env, group_id=None, question="who books?")["answer"] is None
     groups.update(
         env["group"]["id"],
         settings={**env["group"]["settings"], "quiet_hours": {"start": "00:00", "end": "23:59", "tz": "UTC"}},
     )
-    assert ask(env, group_id=None, question="who books?")["answer"].startswith("I can only answer privately")
+    assert ask(env, group_id=None, question="who books?")["answer"] is None
 
 
 def test_best_source_picks_the_message_the_answer_came_from():

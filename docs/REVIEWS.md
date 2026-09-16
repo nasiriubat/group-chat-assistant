@@ -49,11 +49,12 @@ Recorded, not changed:
 - **An htmx error's HTML body is never shown**, because htmx does not swap
   4xx/5xx by default; the toast is what the admin sees. The body stays for
   clients that are not htmx.
-- **A paired WhatsApp number answers every private message**, members with an
+- **A paired WhatsApp number answered every private message**, members with an
   answer and everyone else with "I can only answer privately about groups you
-  are in". On an operator's own number that means friends get a bot reply.
-  This is a product decision, raised with the operator and recorded in
-  BACKLOG.md.
+  are in". On an operator's own number that meant friends got a bot reply.
+  Raised as a product decision; the operator chose to switch it off, and
+  v1.3.1 makes **Allow private questions** off by default and silent when no
+  group allows it.
 - **The new dialogs and searchable lists need JavaScript**, as htmx already
   does. Without it a searchable list is the plain browser control.
 

@@ -51,7 +51,9 @@
     <label><input type="checkbox" name="decision_tracking" value="true" {% if s.decision_tracking %}checked{% endif %}>
       Track decisions <small>one small model call per new chunk, so answers can say what changed and when</small></label>
     <label><input type="checkbox" name="allow_dm" value="true" {% if s.allow_dm %}checked{% endif %}>
-      Allow private questions <small>members of this group can ask the bot directly and get a text citation</small></label>
+      Allow private questions <small>off by default. Turned on, members of this group can ask the bot directly and
+      get a text citation. Everyone else gets no reply at all: on a paired personal number, a private message is
+      usually meant for you, not for the assistant.</small></label>
     <label><input type="checkbox" name="index_files" value="true" {% if s.index_files %}checked{% endif %}>
       Index files shared in the chat <small>documents and pictures posted here become searchable, the same as an
       upload on the Knowledge page, up to 10 MB each. The gateway has to download them, which is the behaviour
