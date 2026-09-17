@@ -57,7 +57,7 @@ quote of the message it came from, or says it does not know.
 - Embeddings and the reranker run locally on CPU. No chat text leaves the box
   until the answer step.
 
-Status: v1.1. Admin panel and setup wizard at `http://localhost:8000/admin`.
+Status: v1.3.3. Admin panel and setup wizard at `http://localhost:8000/admin`.
 Measured numbers in [docs/EVAL.md](docs/EVAL.md), the runbook in
 [docs/OPERATIONS.md](docs/OPERATIONS.md), running it on a CSC cPouta or Google
 Cloud VM in [docs/DEPLOY.md](docs/DEPLOY.md), the threat model and its gaps in
@@ -67,15 +67,18 @@ Cloud VM in [docs/DEPLOY.md](docs/DEPLOY.md), the threat model and its gaps in
 Telegram: create the bot with @BotFather, run `/setprivacy` → Disable so it
 sees every group message, add it to the group. Discord: create an
 application, add a bot, enable the Message Content intent, invite it with
-Read Messages, Send Messages and Read Message History. Paste the tokens on
-the Channels page, then enable the groups that appear. Step by step, with
-links, in [docs/SETUP.md](docs/SETUP.md#4-connect-a-channel).
+Read Messages, Send Messages and Read Message History. Slack: create the app
+from the manifest in the setup guide, generate an app-level token, install it,
+and `/invite` it to each channel; it runs over Socket Mode, so no public URL
+is needed. Paste the tokens on the Channels page, then enable the
+conversations that appear. Step by step, with links, in
+[docs/SETUP.md](docs/SETUP.md#4-connect-a-channel).
 
 ## Quickstart
 
 Needs Docker Compose v2, 4 GB of RAM (the app settles around 3 GB with the
-local models loaded), an LLM API
-key, and a phone with plain WhatsApp on a dedicated number.
+local models loaded), an LLM API key, and one channel to listen on: a Slack,
+Telegram or Discord bot, or a phone with plain WhatsApp on a dedicated number.
 
 ```
 git clone https://github.com/nasiriubat/wtsapp-rag.git && cd wtsapp-rag
