@@ -131,6 +131,9 @@ dialog.modal::backdrop { background: rgba(15, 17, 23, 0.5); }
 button.icon { background: none; border: 0; box-shadow: none; color: var(--text-faint); padding: 0 4px; font-size: 22px; line-height: 1; }
 button.icon:hover { background: none; color: var(--text); }
 
+/* A filtered-out row is display:grid or flex by its own class; hidden wins. */
+[hidden] { display: none !important; }
+
 /* ---------- searchable lists ---------- */
 
 .search { position: relative; display: block; }

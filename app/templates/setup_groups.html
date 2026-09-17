@@ -5,13 +5,27 @@
   {% if seen %}
   <p class="card-note">These are the groups your connected channels can see. Ticking one starts logging its
     messages; nothing said before this moment is stored until you import the history.</p>
+  <div class="filters" style="margin-bottom:16px">
+    <label>Channel
+      <select data-filter="wizard-seen" data-filter-key="channel" data-search aria-label="Channel">
+        <option value="">Every channel</option>
+        {% for kind in seen | map(attribute='channel') | unique | sort %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
+      </select></label>
+    <label>Search <input type="search" data-filter="wizard-seen" data-filter-key="text" placeholder="name or id"></label>
+    <span class="muted" style="font-size:12.5px" data-filter-count="wizard-seen"
+          data-label="{n} of {total}">{{ seen | length }}</span>
+  </div>
   <form method="post" action="/setup/groups">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    {% for g in seen %}
-    <label><input type="checkbox" name="group" value="{{ g.id }}" {% if g.id in known %}checked disabled{% endif %}>
-      {{ g.subject or g.id }}
-      <small>{{ g.channel }} · {{ g.id }}{% if g.id in known %} · already enabled{% endif %}</small></label>
-    {% endfor %}
+    <div id="wizard-seen">
+      {% for g in seen %}
+      <label data-channel="{{ g.channel }}" data-name="{{ g.subject or '' }}" data-id="{{ g.id }}">
+        <input type="checkbox" name="group" value="{{ g.id }}" {% if g.id in known %}checked disabled{% endif %}>
+        {{ g.subject or g.id }}
+        <small>{{ g.channel }} · {{ g.id }}{% if g.id in known %} · already enabled{% endif %}</small></label>
+      {% endfor %}
+      <p class="empty" data-filter-empty="wizard-seen" hidden><strong>Nothing matches</strong>Clear the search to see them all.</p>
+    </div>
     <button>Enable selected</button>
   </form>
   {% else %}

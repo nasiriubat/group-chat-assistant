@@ -227,6 +227,38 @@ function searchable(field) {
   });
 }
 
+// ---------- list filters ----------
+// A long list narrowed in the page: every control carries data-filter="<list
+// id>" and data-filter-key, every row the data-* to match it against. The
+// rows are all there without this script, which is the honest fallback.
+function applyFilter(listId) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  const rows = [...list.children].filter((row) => !row.dataset.filterEmpty);
+  const terms = [...document.querySelectorAll(`[data-filter="${listId}"]`)]
+    .map((control) => [control.dataset.filterKey, control.value.trim().toLowerCase()])
+    .filter(([, value]) => value);
+  let shown = 0;
+  for (const row of rows) {
+    const against = (key) => (key === "text" ? Object.values(row.dataset).join(" ") : row.dataset[key] || "");
+    const match = terms.every(([key, value]) => against(key).toLowerCase().includes(value));
+    row.hidden = !match;
+    shown += match ? 1 : 0;
+  }
+  const empty = list.querySelector(`[data-filter-empty="${listId}"]`);
+  if (empty) empty.hidden = shown > 0;
+  const count = document.querySelector(`[data-filter-count="${listId}"]`);
+  if (count) count.textContent = count.dataset.label.replace("{n}", shown).replace("{total}", rows.length);
+}
+
+for (const event of ["input", "change"]) {
+  document.addEventListener(event, (e) => {
+    const listId = e.target.dataset?.filter;
+    if (listId) applyFilter(listId);
+  });
+}
+document.querySelectorAll("[data-filter]").forEach((control) => applyFilter(control.dataset.filter));
+
 document.querySelectorAll("[data-search]").forEach(searchable);
 document.addEventListener("htmx:load", (e) => {
   const elt = e.detail.elt;

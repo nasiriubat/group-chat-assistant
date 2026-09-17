@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.3 — 16 September 2026
+
+**Finding one conversation among dozens.** The Groups page and the wizard's
+Groups step listed everything the channels can see in one flat run of rows —
+67 of them on a linked phone, with Slack's channels mixed in. Both now have a
+**Channel** dropdown and a **Search** box above the list, and a count beside
+the heading saying how many of them you are looking at. The dropdown is the
+same searchable control the Model field and the time zone picker use, so
+there is still no JavaScript dependency; without scripting the whole list is
+there as before.
+
 ## v1.3.2 — 16 September 2026
 
 **Slack stayed connected for nine seconds at a time.** `@slack/socket-mode`

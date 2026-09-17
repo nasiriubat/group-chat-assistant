@@ -331,6 +331,11 @@ assistant answers questions and does not start conversations.
 Go to **Setup → Groups**, or **Groups** in the sidebar. Everything your
 channels can see is listed. Tick the ones the assistant should listen to.
 
+A phone or a workspace can see dozens of conversations, so both pages have a
+**Channel** dropdown and a **Search** box above the list: pick Slack, type a
+few letters of the name, and only what matches stays on screen. The count next
+to the heading says how many of them you are looking at.
+
 Only messages sent **after** you enable a group are stored. Step 7 covers
 older history.
 

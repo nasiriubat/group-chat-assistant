@@ -132,6 +132,22 @@ def test_the_model_list_arrives_as_suggestions_for_the_model_field(browser, monk
     assert 'data-open-list="model-new"' in res.text
 
 
+def test_the_conversation_list_carries_what_the_filter_matches_on(browser):
+    import gateway_state
+
+    gateway_state.update("slack", connected=True, groups=[{"id": "sl:CFILTER", "subject": "SFAi / #random"}])
+    try:
+        for path, list_id in (("/admin/groups", "seen"), ("/setup/groups", "wizard-seen")):
+            page = browser.get(path).text
+            assert f'data-filter="{list_id}" data-filter-key="channel"' in page
+            assert f'data-filter="{list_id}" data-filter-key="text"' in page
+            assert f'data-filter-count="{list_id}"' in page and f'data-filter-empty="{list_id}"' in page
+            assert '<option value="slack">slack</option>' in page
+            assert 'data-channel="slack" data-name="SFAi / #random" data-id="sl:CFILTER"' in page
+    finally:
+        gateway_state.update("slack", connected=False, groups=[])
+
+
 def test_quiet_hours_offer_every_time_zone_and_group_pickers_are_searchable(browser):
     import groups
 
