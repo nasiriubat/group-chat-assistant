@@ -52,7 +52,7 @@
   </div>
   <div id="seen">
     {% for g in seen %}
-    <form method="post" action="/admin/groups" class="grid" style="align-items:center; margin-bottom:8px"
+    <form method="post" action="/admin/groups" class="grid seen-row" style="margin-bottom:8px"
           data-channel="{{ g.channel }}" data-name="{{ g.subject or '' }}" data-id="{{ g.id }}">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <input type="hidden" name="channel" value="{{ g.channel }}">

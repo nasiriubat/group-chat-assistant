@@ -207,7 +207,7 @@ label small { display: block; font-weight: 400; color: var(--text-muted); font-s
 label > input, label > select, label > textarea { margin-top: 5px; }
 
 input[type="text"], input[type="password"], input[type="number"], input[type="time"], input[type="file"],
-input:not([type]), select, textarea {
+input[type="search"], input:not([type]), select, textarea {
   width: 100%; padding: 8px 10px; font: inherit; font-size: 13.5px; color: var(--text);
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
   box-shadow: 0 1px 1px rgba(26, 31, 54, 0.04); transition: border-color 0.12s, box-shadow 0.12s;

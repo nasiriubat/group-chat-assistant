@@ -90,7 +90,9 @@ button.secondary.htmx-request::after, button.link.htmx-request::after {
 @media (prefers-reduced-motion: reduce) { button.htmx-request::after { animation: none; } }
 .notice[role="alert"] { font-weight: 500; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-.filters label { margin: 0; min-width: 160px; }
+.filters label { margin: 0; min-width: 200px; }
+/* One conversation per row: what it is on the left, the one action on the right. */
+.seen-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 .pager { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
 /* A status and the one action that changes it, side by side in a table cell. */
 .row-action { display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; }
