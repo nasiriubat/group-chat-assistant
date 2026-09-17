@@ -36,7 +36,7 @@ Then put it somewhere that is not this machine, and delete copies older than
 you need. A nightly line in cron or a systemd timer does the job:
 
 ```
-0 3 * * * cd /srv/wtsap-rag && docker compose exec -T db pg_dump -U assistant -Fc assistant | age -r age1... > /backups/assistant-$(date +\%F).dump.age && find /backups -name 'assistant-*.age' -mtime +30 -delete
+0 3 * * * cd /srv/group-chat-assistant && docker compose exec -T db pg_dump -U assistant -Fc assistant | age -r age1... > /backups/assistant-$(date +\%F).dump.age && find /backups -name 'assistant-*.age' -mtime +30 -delete
 ```
 
 **Back up `.env` with it, in a different place.** A dump without `SECRET_KEY`

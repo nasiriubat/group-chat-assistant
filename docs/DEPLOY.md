@@ -89,9 +89,9 @@ assistant back after a reboot.
 ## 3 Get the code
 
 ```
-sudo mkdir -p /srv/wtsap-rag && sudo chown "$USER" /srv/wtsap-rag
-git clone https://github.com/nasiriubat/wtsapp-rag.git /srv/wtsap-rag
-cd /srv/wtsap-rag
+sudo mkdir -p /srv/group-chat-assistant && sudo chown "$USER" /srv/group-chat-assistant
+git clone https://github.com/nasiriubat/group-chat-assistant.git /srv/group-chat-assistant
+cd /srv/group-chat-assistant
 git checkout "$(git tag --sort=-v:refname | head -1)"   # the newest release
 mkdir -p gateway/auth_state gateway/data
 sudo chown -R 1000:1000 gateway/auth_state gateway/data
@@ -112,7 +112,7 @@ docker compose stop gateway     # nothing new arrives while you copy
 docker compose exec -T db pg_dump -U assistant -Fc assistant > assistant.dump
 docker compose down             # not -v: the laptop's volumes stay as a fallback
 tar czf move.tgz .env assistant.dump gateway/auth_state
-scp move.tgz ubuntu@VM_ADDRESS:/srv/wtsap-rag/
+scp move.tgz ubuntu@VM_ADDRESS:/srv/group-chat-assistant/
 rm assistant.dump move.tgz
 ```
 
@@ -120,7 +120,7 @@ The `.env` must travel with the dump: its `SECRET_KEY` is the only thing that
 decrypts the keys and tokens inside it. On the **VM**:
 
 ```
-cd /srv/wtsap-rag
+cd /srv/group-chat-assistant
 tar xzf move.tgz && rm move.tgz
 chmod 600 .env
 sudo chown -R 1000:1000 gateway/auth_state
@@ -197,7 +197,7 @@ session cookie is marked Secure because Caddy reports HTTPS.
 ## 8 Backups
 
 The nightly encrypted dump in [OPERATIONS.md](OPERATIONS.md#backup) applies
-as written; the repository path there is already `/srv/wtsap-rag`. Send the
+as written; the repository path there is already `/srv/group-chat-assistant`. Send the
 file off the VM: to CSC Allas on cPouta, or to a Cloud Storage bucket
 (`gcloud storage cp`) on Google Cloud. Keep a copy of `.env` somewhere else
 again.
@@ -205,7 +205,7 @@ again.
 ## 9 Upgrades
 
 ```
-cd /srv/wtsap-rag
+cd /srv/group-chat-assistant
 git fetch --tags && git checkout vX.Y.Z
 docker compose up -d --build
 ```

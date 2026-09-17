@@ -35,8 +35,8 @@ is then on your main account.
 ## 1 Install
 
 ```
-git clone https://github.com/nasiriubat/wtsapp-rag.git
-cd wtsapp-rag
+git clone https://github.com/nasiriubat/group-chat-assistant.git
+cd group-chat-assistant
 cp .env.example .env
 ```
 

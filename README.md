@@ -81,7 +81,7 @@ local models loaded), an LLM API key, and one channel to listen on: a Slack,
 Telegram or Discord bot, or a phone with plain WhatsApp on a dedicated number.
 
 ```
-git clone https://github.com/nasiriubat/wtsapp-rag.git && cd wtsapp-rag
+git clone https://github.com/nasiriubat/group-chat-assistant.git && cd group-chat-assistant
 cp .env.example .env         # set the passwords and secrets; see the comments
 docker compose up -d --build # first start downloads ~1 GB of models
 ```
