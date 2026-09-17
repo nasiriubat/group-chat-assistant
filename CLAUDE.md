@@ -2,13 +2,12 @@
 
 ## What this is
 
-A self-hosted assistant that logs group chats (WhatsApp, Telegram, Discord)
-to Postgres, hybrid-searches the history, and answers with a citation to the
-source message or refuses. One operator runs many groups from an admin panel.
+A self-hosted assistant that logs group chats (WhatsApp, Slack, Telegram and
+Discord) to Postgres, hybrid-searches the history, and answers with a citation
+to the source message or refuses. One operator runs many groups from an admin panel.
 Any LLM provider. Local embeddings and reranker.
 
 `ROADMAP.md` is the plan. `BACKLOG.md` is what is deliberately not built.
-`PROMPTS.md` is the v0.1 build log.
 
 ## Architecture (do not deviate)
 
